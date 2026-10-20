@@ -54,7 +54,7 @@ code is turned into **XIR** (*X+ Intermediate Representation*, SSA-flavored),
 packaged as **`.xbc` bytecode**, and executed by the **XVM** (*X+ Virtual
 Machine*). The toolchain is distributed as a **prebuilt, self-contained binary**
 (`xpc`) — download it from the
-[GitHub release page](https://github.com/X-Ples/xpc/releases/tag/xpc), put it
+[GitHub release page](https://github.com/X-Ples/xpc/releases/tag/X%2B), put it
 on your `PATH`, and you are done. No language runtime or package manager is
 required, so X+ runs on laptops, servers, Raspberry Pi boards, and even Android
 phones through Termux.
