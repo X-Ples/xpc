@@ -2,178 +2,209 @@
 
 # X+ (X Plus)
 
-**Bahasa pemrograman tensor-first yang aman: pemeriksaan bentuk matriks saat
-kompilasi, null-safety absolut, arena memory, autodiff, dan dunia hardware
-(MMIO/asm/interrupt) di dalam VM — toolchain 100% Python, jalan di mana saja
-termasuk Android/Termux.**
+**A safe, tensor-first programming language: compile-time matrix shape checking,
+absolute null-safety, arena memory, autodiff, and a hardware world
+(MMIO/asm/interrupts) inside the VM — shipped as a ready-to-run binary,
+available on Linux, macOS, Windows, and Android/Termux.**
 
-`xpc toolchain` · `bahasa v0.1 (locked mode)` · `bytecode: .xbc (XBC1)` ·
-`ekosistem: X-Ples/Liblary`
+`xpc toolchain` · `language v0.1 (locked mode)` · `bytecode: .xbc (XBC1)` ·
+`ecosystem: X-Ples/Liblary`
 
 </div>
 
 ---
 
-## Daftar Isi
+## Table of Contents
 
-1. [Apa itu X+?](#1-apa-itu-x)
-2. [Keunggulan X+](#2-keunggulan-x)
-3. [Instalasi](#3-instalasi)
-4. [Program Pertama](#4-program-pertama)
-5. [Tur Sintaks (Mode Locked)](#5-tur-sintaks-mode-locked)
-6. [Sistem Tipe](#6-sistem-tipe)
-7. [Tensor: vec, mat, `x` Matmul & `.x` Dot Product](#7-tensor-vec-mat-x-matmul--x-dot-product)
+1. [What is X+?](#1-what-is-x)
+2. [Why X+](#2-why-x)
+3. [Installation](#3-installation)
+4. [Your First Program](#4-your-first-program)
+5. [Syntax Tour (Locked Mode)](#5-syntax-tour-locked-mode)
+6. [Type System](#6-type-system)
+7. [Tensors: vec, mat, `x` Matmul & `.x` Dot Product](#7-tensors-vec-mat-x-matmul--x-dot-product)
 8. [Pipeline Operator `|>`](#8-pipeline-operator-)
-9. [comptime — Hitung Saat Kompilasi](#9-comptime--hitung-saat-kompilasi)
-10. [rational — Pecahan Eksak](#10-rational--pecahan-eksak)
-11. [Keamanan: guard, Result, T?, match, dan ?](#11-keamanan-guard-result-t-match-dan-)
-12. [arena — Memori Per-Scope](#12-arena--memori-per-scope)
+9. [comptime — Compute at Compile Time](#9-comptime--compute-at-compile-time)
+10. [rational — Exact Fractions](#10-rational--exact-fractions)
+11. [Safety: guard, Result, T?, match, and ?](#11-safety-guard-result-t-match-and-)
+12. [arena — Per-Scope Memory](#12-arena--per-scope-memory)
 13. [@grad & @tensor_core](#13-grad--tensor_core)
 14. [SMV — System Magic Variables](#14-smv--system-magic-variables)
-15. [Dunia Hardware di Dalam VM](#15-dunia-hardware-di-dalam-vm)
-16. [Sistem Error & Diagnostik Visual](#16-sistem-error--diagnostik-visual)
-17. [XIR & Bytecode .xbc](#17-xir--bytecode-xbc)
-18. [Referensi CLI: xpc (40 Subperintah)](#18-referensi-cli-xpc-40-subperintah)
+15. [The Hardware World Inside the VM](#15-the-hardware-world-inside-the-vm)
+16. [Error System & Visual Diagnostics](#16-error-system--visual-diagnostics)
+17. [XIR & the .xbc Bytecode](#17-xir--the-xbc-bytecode)
+18. [CLI Reference: xpc (40 Subcommands)](#18-cli-reference-xpc-40-subcommands)
 19. [Standard Library](#19-standard-library)
-20. [Sistem Resolusi Library (Offline-First)](#20-sistem-resolusi-library-offline-first)
-21. [Tutorial: Membuat Library Pribadi](#21-tutorial-membuat-library-pribadi)
-22. [Tutorial: Publikasi ke X-Ples/Liblary (Fork + PR)](#22-tutorial-publikasi-ke-x-plesliblary-fork--pr)
-23. [Pengujian](#23-pengujian)
-24. [Struktur Proyek](#24-struktur-proyek)
-25. [Kegunaan Nyata](#25-kegunaan-nyata)
+20. [Library Resolution System (Offline-First)](#20-library-resolution-system-offline-first)
+21. [Tutorial: Building a Private Library](#21-tutorial-building-a-private-library)
+22. [Tutorial: Publishing to X-Ples/Liblary (Fork + PR)](#22-tutorial-publishing-to-x-plesliblary-fork--pr)
+23. [Testing](#23-testing)
+24. [Project Structure](#24-project-structure)
+25. [Real-World Uses](#25-real-world-uses)
 26. [Troubleshooting & FAQ](#26-troubleshooting--faq)
 27. [Roadmap v0.5](#27-roadmap-v05)
-28. [Ekosistem & Kontribusi](#28-ekosistem--kontribusi)
+28. [Ecosystem & Contributing](#28-ecosystem--contributing)
 
 ---
 
-## 1. Apa itu X+?
+## 1. What is X+?
 
-X+ (dibaca: *"X Plus"*) adalah bahasa pemrograman yang dikompilasi: kode sumber
-`.xp` diolah menjadi **XIR** (*X+ Intermediate Representation*, SSA-flavored),
-dikemas menjadi **bytecode `.xbc`**, lalu dieksekusi oleh **XVM** (*X+ Virtual
-Machine*). Seluruh toolchain ditulis dalam Python murni — tanpa dependensi
-eksternal — sehingga X+ terpasang dan berjalan di hampir semua lingkungan:
-laptop, server, Raspberry Pi, bahkan ponsel Android lewat Termux.
+X+ (pronounced *"X Plus"*) is a compiled programming language: `.xp` source
+code is turned into **XIR** (*X+ Intermediate Representation*, SSA-flavored),
+packaged as **`.xbc` bytecode**, and executed by the **XVM** (*X+ Virtual
+Machine*). The toolchain is distributed as a **prebuilt, self-contained binary**
+(`xpc`) — download it from the
+[GitHub release page](https://github.com/X-Ples/xpc/releases/tag/xpc), put it
+on your `PATH`, and you are done. No language runtime or package manager is
+required, so X+ runs on laptops, servers, Raspberry Pi boards, and even Android
+phones through Termux.
 
-X+ dirancang dengan tiga filosofi utama:
+X+ is built on three core philosophies:
 
-**Pertama, *keamanan sejak kompilasi*.** Kesalahan yang bisa dideteksi lebih awal
-tidak boleh menunggu runtime. Contoh paling ikonik: mengalikan `mat[2,3] x mat[4,2]`
-langsung **ditolak compiler** dengan `E204 Dimension Mismatch` — sebelum program
-pertama kali dijalankan. Integer bersifat *checked-by-default* (overflow memicu
-panic `E301`, bukan angka aneh diam-diam; butuh wrap eksplisit? pakai `+% -% *%`),
-akses array dijaga bounds checking, dan `null` mustahil menyusup berkat tipe `T?`.
+**First, *safety from compile time*.** Errors that can be detected early must
+not wait until runtime. The most iconic example: multiplying
+`mat[2,3] x mat[4,2]` is **rejected by the compiler** with
+`E204 Dimension Mismatch` — before the program ever runs. Integers are
+*checked by default* (overflow triggers panic `E301` instead of silently
+producing a strange number; need explicit wrapping? use `+% -% *%`), array
+access is bounds-checked, and `null` cannot sneak in thanks to the `T?` type.
 
-**Kedua, *matematika sebagai warga kelas satu*.** `vec2`, `mat2`, `mat[2,3]` adalah
-tipe primitif bawaan; operator `x` mengalikan matriks; `.x` menghitung dot product;
-`rational` berhitung pecahan secara eksak; `comptime` menghitung tabel lookup saat
-kompilasi; dan `@grad` menghitung turunan fungsi secara numerik — semua tanpa
-instalasi tambahan.
+**Second, *math as a first-class citizen*.** `vec2`, `mat2`, and `mat[2,3]` are
+built-in primitive types; the `x` operator multiplies matrices; `.x` computes
+the dot product; `rational` does exact fraction arithmetic; `comptime` computes
+lookup tables at compile time; and `@grad` computes numeric derivatives of
+functions — all with no extra installation.
 
-**Ketiga, *dunia hardware yang aman*.** X+ membawa gaya pemrograman mikrokontroler
-ke dalam VM: `register GPIOA_ODR: u32 @ 0x40020014;` mendeklarasikan register MMIO
-type-safe (tanpa pointer cast!), `asm! { "nop"; }` menembak instruksi level rendah,
-`@interrupt(vector::EXTI0)` mendaftarkan ISR, dan `gpio::write(2, gpio::HIGH)`
-menyalakan LED virtual — semua tereksekusi di atas XVM yang penuh pemeriksaan.
+**Third, *a safe hardware world*.** X+ brings microcontroller-style programming
+into the VM: `register GPIOA_ODR: u32 @ 0x40020014;` declares a type-safe MMIO
+register (no pointer casts!), `asm! { "nop"; }` fires low-level instructions,
+`@interrupt(vector::EXTI0)` registers an ISR, and
+`gpio::write(2, gpio::HIGH)` lights up a virtual LED — all executed on top of a
+fully-checked XVM.
 
-X+ mendukung **dua mode sintaks**: mode **legacy** (blok makro `@show(sys::out) { ... }`
-dengan injeksi slot, `yield` sebagai return) yang tetap didukung penuh demi
-kompatibilitas, dan mode **locked** (`show(sys::out, "...")` + `return`) yang merupakan
-mode resmi. Seluruh dokumentasi ini memakai mode locked.
+X+ supports **two syntax modes**: **legacy** mode (macro blocks
+`@show(sys::out) { ... }` with slot injection, `yield` as return), which remains
+fully supported for compatibility, and **locked** mode
+(`show(sys::out, "...")` + `return`), which is the official mode. This entire
+document uses locked mode.
 
-> **Catatan:** spesifikasi formal (EBNF, set instruksi XIR, format XBC, tabel SMV)
-> ada di **`SPECS.md`**. Folder **`examples/`** berisi 20 program contoh yang bisa
-> langsung dijalankan — semua cuplikan kode di dokumen ini diambil dari kode nyata
-> yang lolos kompilasi.
-
----
-
-## 2. Keunggulan X+
-
-| # | Keunggulan | Penjelasan |
-|---|-----------|------------|
-| 1 | **Shape checking saat kompilasi** | `mat[2,3] x mat[4,2]` ditolak dengan `E204` — kesalahan aljabar linear tertangkap sebelum runtime |
-| 2 | **Integer checked-by-default** | Overflow → panic `E301`; operasi wrap `+% -% *%` tersedia eksplisit |
-| 3 | **Bounds checking** | Akses di luar array/tensor → `E303`, bukan memory corruption |
-| 4 | **Null-safety absolut** | `T?` + `match { Some(x) =>, None => }` — tidak ada segfault kelas null |
-| 5 | **`Result<T,E>` + `?`** | Propagasi error eksplisit zero-overhead, gaya Rust |
-| 6 | **`guard`** | Prasyarat dini yang bersih; bahkan dipakai stdlib untuk loop max/min |
-| 7 | **`comptime` (CTFE)** | Tabel lookup dihitung compiler — 0ms runtime; batas 1.000.000 langkah (`E220`) |
-| 8 | **`rational`** | `1/3 + 2/7 = 13/21` eksak — tanpa galat floating-point |
-| 9 | **`@grad`** | Autodiff numerik satu baris: `@grad(loss_func)` menghasilkan fungsi turunan |
-| 10 | **`@tensor_core`** | Blok kernel di-offload ke jalur akselerator (SIMD, simulasi) |
-| 11 | **SMV ±40 aktif** | Telemetri hardware/runtime langsung di kode: `@simd_width`, `@core_count`, `@arena_peak`, ... |
-| 12 | **`arena`** | Semua alokasi blok dibersihkan serentak saat keluar scope — 0 fragmentasi |
-| 13 | **Pipeline `\|>`** | `raw_signal \|> normalize \|> relu \|> scale(2.0)` — data mengalir kiri ke kanan |
-| 14 | **MMIO / `asm!` / `@interrupt` / GPIO** | Lab mikrokontroler virtual yang type-safe, tanpa pointer cast |
-| 15 | **Error visual berkode** | E1xx/E2xx/E3xx + W1xx warnings, dengan caret penunjuk posisi |
-| 16 | **Offline-first** | Resolver 4 tingkat + lockfile `xpc.lock` (SHA-256); internet opsional |
-| 17 | **Toolchain 100% Python** | Tanpa kompilasi native; Linux/macOS/Windows/Termux |
-| 18 | **CLI 40 subperintah** | run/check/lint/ast/ir/disasm/build/bench/fmt/watch/install/audit/simulate/dll |
-| 19 | **Ekosistem terbuka** | Library publik terpusat di `X-Ples/Liblary`; cukup fork + PR |
-
-Singkatnya: X+ menggabungkan *type safety* ala Rust, kenyamanan scripting ala
-Python, dan lab hardware ala embedded — dalam satu bahasa kecil yang konsisten.
+> **Note:** the formal specification (EBNF, XIR instruction set, XBC format,
+> SMV table) lives in **`SPECS.md`**. The **`examples/`** folder contains 20
+> ready-to-run sample programs — every code snippet in this document is taken
+> from real code that compiles.
 
 ---
 
-## 3. Instalasi
+## 2. Why X+
 
-### 3.1 Cara cepat (disarankan)
+| # | Strength | Description |
+|---|----------|-------------|
+| 1 | **Compile-time shape checking** | `mat[2,3] x mat[4,2]` is rejected with `E204` — linear-algebra mistakes are caught before runtime |
+| 2 | **Checked integers by default** | Overflow → panic `E301`; explicit wrapping operators `+% -% *%` are available |
+| 3 | **Bounds checking** | Out-of-range array/tensor access → `E303`, not memory corruption |
+| 4 | **Absolute null-safety** | `T?` + `match { Some(x) =>, None => }` — no null-class segfaults |
+| 5 | **`Result<T,E>` + `?`** | Explicit, zero-overhead error propagation, Rust style |
+| 6 | **`guard`** | Clean early preconditions; even used by the stdlib for max/min loops |
+| 7 | **`comptime` (CTFE)** | Lookup tables computed by the compiler — 0 ms at runtime; 1,000,000-step limit (`E220`) |
+| 8 | **`rational`** | `1/3 + 2/7 = 13/21` exactly — no floating-point error |
+| 9 | **`@grad`** | One-line numeric autodiff: `@grad(loss_func)` produces the derivative function |
+| 10 | **`@tensor_core`** | Kernel blocks are offloaded to the accelerator path (SIMD, simulated) |
+| 11 | **±40 active SMVs** | Hardware/runtime telemetry right in your code: `@simd_width`, `@core_count`, `@arena_peak`, ... |
+| 12 | **`arena`** | All allocations in a block are released at once on scope exit — 0 fragmentation |
+| 13 | **Pipeline `\|>`** | `raw_signal \|> normalize \|> relu \|> scale(2.0)` — data flows left to right |
+| 14 | **MMIO / `asm!` / `@interrupt` / GPIO** | A virtual microcontroller lab that is type-safe, with no pointer casts |
+| 15 | **Coded visual errors** | E1xx/E2xx/E3xx + W1xx warnings, with a caret pointing at the position |
+| 16 | **Offline-first** | 4-level resolver + `xpc.lock` lockfile (SHA-256); internet is optional |
+| 17 | **Single prebuilt binary** | Download and run — nothing to build or install; Linux/macOS/Windows/Termux |
+| 18 | **40-subcommand CLI** | run/check/lint/ast/ir/disasm/build/bench/fmt/watch/install/audit/simulate/dll |
+| 19 | **Open ecosystem** | Central public libraries at `X-Ples/Liblary`; just fork + PR |
 
-Letakkan `install.sh` di root proyek, lalu:
+In short: X+ combines Rust-style *type safety*, Python-style scripting
+convenience, and an embedded-style hardware lab — in one small, consistent
+language.
+
+---
+
+## 3. Installation
+
+X+ is distributed as **prebuilt binaries**. All releases are published at:
+
+**<https://github.com/X-Ples/xpc/releases/tag/xpc>**
+
+### 3.1 Download the binary
+
+1. Open the [release page](https://github.com/X-Ples/xpc/releases/tag/xpc).
+2. Under **Assets**, download the binary that matches your operating system and
+   CPU architecture.
+3. Rename it to `xpc` (or `xpc.exe` on Windows) if needed.
+
+### 3.2 Put it on your `PATH`
+
+**Linux / macOS:**
 
 ```bash
-cd ~/X+
-bash install.sh
+chmod +x xpc
+mkdir -p ~/.local/bin
+mv xpc ~/.local/bin/xpc          # make sure ~/.local/bin is on your PATH
 ```
 
-Installer akan:
-
-1. Memeriksa `python3` (3.8+; teruji hingga 3.14, termasuk Termux).
-2. Memvalidasi toolchain (`import xplus.compiler, xplus.cli`) — dan **merapikan
-   tata letak otomatis** bila file paket berada flat di root (penyebab error
-   `ModuleNotFoundError: No module named 'xplus'`).
-3. Memasang perintah global: symlink `~/.local/bin/xpc` (Linux/Mac) atau
-   **`$PREFIX/bin/xpc` di Termux** — sudah otomatis ada di PATH.
-4. Menjalankan smoke test (`xpc version`).
-5. Idempoten: aman dijalankan berulang kali.
-
-### 3.2 Verifikasi
+**Android / Termux:**
 
 ```bash
-xpc version                 # versi CLI + compiler + target
-xpc doctor                  # diagnosis kesehatan toolchain
-xpc cpu-info                # deteksi AVX-512 / NEON / FMA3
-xpc run examples/hello.xp   # jalankan contoh pertama
+chmod +x xpc
+mv xpc $PREFIX/bin/xpc           # $PREFIX/bin is already on the Termux PATH
 ```
 
-### 3.3 Persyaratan
+**Windows:** move `xpc.exe` to a folder of your choice and add that folder to
+your `PATH` environment variable.
 
-- **Python 3.8+** (disarankan 3.10+). Tidak ada dependensi pihak ketiga —
-  semuanya dari standard library Python.
-- Sistem operasi apa pun yang menjalankan Python, termasuk **Android/Termux**.
+### 3.3 Verify
+
+```bash
+xpc version                 # CLI + compiler + target versions
+xpc doctor                  # toolchain health diagnosis
+xpc cpu-info                # detect AVX-512 / NEON / FMA3
+xpc run examples/hello.xp   # run your first example
+```
+
+> The `examples/` folder and the standard library (`libs/`) are part of the
+> project repository. If you only downloaded the binary, the stdlib is bundled
+> inside it (resolution level 3, see [Section 20](#20-library-resolution-system-offline-first)),
+> and you can write your own `.xp` files anywhere.
+
+### 3.4 Requirements
+
+- A supported operating system (Linux, macOS, Windows, or Android/Termux) on a
+  supported CPU architecture — see the assets listed on the release page.
+- **Nothing else.** No language runtime, no third-party dependencies.
+
+### 3.5 Updating
+
+```bash
+xpc self-update             # update xpc itself
+```
+
+You can always re-download the latest binary from the release page as well.
 
 ---
 
-## 4. Program Pertama
+## 4. Your First Program
 
-Buat file `hello.xp`:
+Create a file named `hello.xp`:
 
 ```rust
 main => int32 {
-    nama := "Dunia";
+    name := "World";
     speed := 999;
 
-    show(sys::out, "Halo, {nama}! Kecepatan: {speed}\n");
-    show(sys::out, "Format presisi: {speed as f64:.2}\n");
+    show(sys::out, "Hello, {name}! Speed: {speed}\n");
+    show(sys::out, "Precision format: {speed as f64:.2}\n");
 
     yield 0;
 }
 ```
 
-Jalankan:
+Run it:
 
 ```bash
 xpc run hello.xp
@@ -182,198 +213,198 @@ xpc run hello.xp
 Output:
 
 ```
-Halo, Dunia! Kecepatan: 999
-Format presisi: 999.00
+Hello, World! Speed: 999
+Precision format: 999.00
 ```
 
-Perhatikan tiga hal khas X+:
+Notice three signature X+ traits:
 
-1. **`main => int32 { ... }`** — entry point implisit (bisa ditambahi anotasi
-   `@entry`; return type `void` juga sah).
-2. **`show(sys::out, "...")`** — output menuju kanal `sys::out`, dengan
-   interpolasi `{ekspresi}` yang dievaluasi **saat kompilasi** (zero runtime
-   format error; variabel divalidasi type checker).
-3. **`{speed:.2}` dan `{speed as f64}`** — format presisi dan cast eksplisit
-   langsung di dalam string format.
+1. **`main => int32 { ... }`** — an implicit entry point (you may add the
+   `@entry` annotation; a `void` return type is also valid).
+2. **`show(sys::out, "...")`** — output goes to the `sys::out` channel, with
+   `{expression}` interpolation resolved **at compile time** (zero runtime
+   format errors; variables are validated by the type checker).
+3. **`{speed:.2}` and `{speed as f64}`** — precision formatting and explicit
+   casts directly inside the format string.
 
-Tiga cara mengeksekusi kode X+:
+Three ways to execute X+ code:
 
-| Cara | Perintah | Kapan dipakai |
-|------|----------|---------------|
-| Jalankan langsung | `xpc run hello.xp` | Sehari-hari; compile ke RAM (tmpfs) + eksekusi |
-| Kompilasi AOT | `xpc build hello.xp` → `xpc hello.xbc` | Distribusi bytecode; `xpc app.xbc` langsung jalan |
-| REPL | `xpc repl` | Eksperimen cepat, JIT di RAM |
+| Way | Command | When to use |
+|-----|---------|-------------|
+| Run directly | `xpc run hello.xp` | Everyday use; compile to RAM (tmpfs) + execute |
+| AOT compile | `xpc build hello.xp` → `xpc hello.xbc` | Distributing bytecode; `xpc app.xbc` runs directly |
+| REPL | `xpc repl` | Quick experiments, JIT in RAM |
 
 ---
 
-## 5. Tur Sintaks (Mode Locked)
+## 5. Syntax Tour (Locked Mode)
 
-### 5.1 Variabel: `:=` dan anotasi tipe
+### 5.1 Variables: `:=` and type annotations
 
 ```rust
-nama := "Dimas";            // inferensi tipe
-speed: f64 = 999.0;         // dengan anotasi eksplisit
+name := "Dimas";            // type inference
+speed: f64 = 999.0;         // with an explicit annotation
 data := [1.0, 2.0, 3.0];    // array literal
-nol := [0.0; 4];            // fill: [0.0, 0.0, 0.0, 0.0]
+zeros := [0.0; 4];          // fill: [0.0, 0.0, 0.0, 0.0]
 ```
 
-Dua bentuk deklarasi: `ident := expr;` (inferensi) dan `ident: type = expr;`
-(eksplisit). **Statement diakhiri `;`.** Konstanta global memakai `const`
-(tidak bisa dimutasi — pelanggaran ditolak compiler dengan `E208`):
+Two declaration forms: `ident := expr;` (inferred) and `ident: type = expr;`
+(explicit). **Statements end with `;`.** Global constants use `const`
+(immutable — violations are rejected by the compiler with `E208`):
 
 ```rust
-const GRAVITASI: f64 = 9.80665;
+const GRAVITY: f64 = 9.80665;
 const MAX_BUFFER: int32 = 4096;
 ```
 
-### 5.2 Fungsi
+### 5.2 Functions
 
 ```rust
-// fungsi dengan tipe lengkap
-fn bagi_cepat(a: f64, b: f64) -> f64 {
+// function with full types
+fn safe_divide(a: f64, b: f64) -> f64 {
     guard b != 0.0 else {
         return 0.0;
     }
     return a / b;
 }
 
-// fungsi implisit: param tanpa tipe, return lewat yield (alias legacy)
+// implicit function: untyped params, return via yield (legacy alias)
 fn normalize(data) {
     total := sum(data);
-    hasil := [];
+    result := [];
     for x in data {
-        push(hasil, x / total);
+        push(result, x / total);
     }
-    yield hasil;
+    yield result;
 }
 ```
 
-`return` (locked) dan `yield` (alias legacy) keduanya valid; mode locked
-merekomendasikan `return` — `yield` disiapkan kembali sebagai generator di v0.5.
+`return` (locked) and `yield` (legacy alias) are both valid; locked mode
+recommends `return` — `yield` is reserved to return as a generator in v0.5.
 
-### 5.3 Percabangan, perulangan, match
+### 5.3 Branching, loops, match
 
 ```rust
-if blink > 5 { break; }             // blok biasa
-if x > 0.0 { push(hasil, x); } else { push(hasil, 0.0); }
+if blink > 5 { break; }             // plain block
+if x > 0.0 { push(result, x); } else { push(result, 0.0); }
 
-for i in 0..4 { ... }               // range eksklusif 0,1,2,3
-for i in 1..=6 { ... }              // range inklusif
-loop {                              // loop tanpa kondisi + break
+for i in 0..4 { ... }               // exclusive range 0,1,2,3
+for i in 1..=6 { ... }              // inclusive range
+loop {                              // conditionless loop + break
     blink = blink + 1;
     if blink > 5 { break; }
 }
 
-match hasil {
+match result {
     Ok(v)  => { show(sys::out, "OK: {v}\n"); }
-    Err(e) => { show(sys::out, "gagal: {e}\n"); }
+    Err(e) => { show(sys::out, "failed: {e}\n"); }
 }
 
 match u1 {
-    Some(nama) => { show(sys::out, "Ditemukan: {nama}\n"); }
-    None       => { show(sys::out, "Tidak ditemukan\n"); }
+    Some(name) => { show(sys::out, "Found: {name}\n"); }
+    None       => { show(sys::out, "Not found\n"); }
 }
 ```
 
-### 5.4 Struct
+### 5.4 Structs
 
 ```rust
 struct Player {
-    nama: string;
+    name: string;
     speed: f64;
     level: int32;
 }
 
 main => int32 {
     p1 := Player {
-        nama: "Dimas",
+        name: "Dimas",
         speed: 999.0,
         level: 99
     };
-    p1.speed = p1.speed + 1.0;      // mutasi field
-    show(sys::out, "{p1.nama} speed {p1.speed}\n");
+    p1.speed = p1.speed + 1.0;      // field mutation
+    show(sys::out, "{p1.name} speed {p1.speed}\n");
     yield 0;
 }
 ```
 
-### 5.5 Mode legacy (kompatibilitas)
+### 5.5 Legacy mode (compatibility)
 
-Program lama memakai blok makro `@show` dengan injeksi slot — bahkan dengan
-anotasi tipe per slot:
+Older programs use the `@show` macro block with slot injection — even with
+per-slot type annotations:
 
 ```rust
 @show(sys::out) {
-    "Player {0} punya kecepatan {1}\n";
-    0::string => p1.nama;
+    "Player {0} has speed {1}\n";
+    0::string => p1.name;
     1::f64    => p1.speed;
 };
 ```
 
-Parser v0.1 menerima kedua gaya, tetapi **locked adalah mode resmi** untuk kode baru.
+The v0.1 parser accepts both styles, but **locked is the official mode** for new code.
 
 ---
 
-## 6. Sistem Tipe
+## 6. Type System
 
-| Keluarga | Tipe | Keterangan |
-|----------|------|------------|
-| Integer signed | `i8` `i16` `i32` `i64` | checked-by-default (overflow → `E301`) |
-| Integer unsigned | `u8` `u16` `u32` `u64` `usize` | ideal untuk register & alamat MMIO |
-| Alias umum | `int32` `int64` | pintasan yang sering dipakai di contoh |
-| Float | `f32` `f64` | f32 untuk grafis/game, f64 untuk sains |
-| Logika/teks | `bool` `string` `void` | |
-| Eksak | `rational` | pecahan eksak; `decimal256` untuk keuangan |
-| Tensor | `vec2` `vec3` `vec4`, `mat2` `mat3` `mat4`, `mat[2,3]`, `tensor[dims]` | primitif bawaan + shape checking |
-| Array tetap | `[f64; 4]` | ukuran diketahui kompilasi |
-| Null-safe | `T?` | `Some(v)` atau `None` |
-| Error-safe | `Result<T,E>` | `Ok(v)` atau `Err(e)` |
-| Buatan | `struct`, `enum`, generik `Result<T,E>` | `struct Player { ... }` |
+| Family | Types | Notes |
+|--------|-------|-------|
+| Signed integers | `i8` `i16` `i32` `i64` | checked by default (overflow → `E301`) |
+| Unsigned integers | `u8` `u16` `u32` `u64` `usize` | ideal for registers & MMIO addresses |
+| Common aliases | `int32` `int64` | shortcuts frequently used in examples |
+| Floats | `f32` `f64` | f32 for graphics/games, f64 for science |
+| Logic/text | `bool` `string` `void` | |
+| Exact | `rational` | exact fractions; `decimal256` for finance |
+| Tensors | `vec2` `vec3` `vec4`, `mat2` `mat3` `mat4`, `mat[2,3]`, `tensor[dims]` | built-in primitives + shape checking |
+| Fixed array | `[f64; 4]` | size known at compile time |
+| Null-safe | `T?` | `Some(v)` or `None` |
+| Error-safe | `Result<T,E>` | `Ok(v)` or `Err(e)` |
+| User-defined | `struct`, `enum`, generic `Result<T,E>` | `struct Player { ... }` |
 
-**Prinsip penting:** `None` dan error **tidak bisa** menyusup ke tipe biasa.
-Fungsi yang bisa gagal bertipe `Result<T,E>`; yang bisa kosong bertipe `T?`.
-Compiler memaksa keduanya ditangani — inilah alasan program X+ nyaris bebas
-crash "tak terduga".
+**Key principle:** `None` and errors **cannot** sneak into ordinary types.
+A function that can fail returns `Result<T,E>`; one that can be empty returns
+`T?`. The compiler forces you to handle both — which is why X+ programs are
+nearly free of "unexpected" crashes.
 
 ---
 
-## 7. Tensor: vec, mat, `x` Matmul & `.x` Dot Product
+## 7. Tensors: vec, mat, `x` Matmul & `.x` Dot Product
 
-### 7.1 Membuat tensor — literal array di konteks tipe
+### 7.1 Creating tensors — array literals in a typed context
 
 ```rust
-W: mat2 = [[0.2, 0.4], [0.5, 0.8]];     // matriks 2x2
-X: vec2 = [1.0, 2.0];                   // vektor 2 dimensi
+W: mat2 = [[0.2, 0.4], [0.5, 0.8]];     // 2x2 matrix
+X: vec2 = [1.0, 2.0];                   // 2-dimensional vector
 
 A23: mat[2, 3] = [[1.0, 2.0, 3.0],
-                  [4.0, 5.0, 6.0]];     // matriks 2x3 generik
+                  [4.0, 5.0, 6.0]];     // generic 2x3 matrix
 B32: mat[3, 2] = [[7.0,  8.0],
                   [9.0,  10.0],
-                  [11.0, 12.0]];        // matriks 3x2
+                  [11.0, 12.0]];        // 3x2 matrix
 ```
 
-Matriks dan vektor adalah **tipe primitif bawaan** — bukan library, bukan class.
-Literalnya array-of-array; type checker yang memvalidasi bentuknya.
+Matrices and vectors are **built-in primitive types** — not a library, not a
+class. The literal is an array-of-arrays; the type checker validates its shape.
 
-### 7.2 Perkalian matriks dengan `x` — diperiksa saat kompilasi
+### 7.2 Matrix multiplication with `x` — checked at compile time
 
 ```rust
-Y := W x X;                 // matmul mat2 x vec2 (di XIR: tensor.mul.mat2)
+Y := W x X;                 // matmul mat2 x vec2 (in XIR: tensor.mul.mat2)
 C := A x B;                 // matmul mat2 x mat2
-C22 := A23 x B32;           // [2x3] x [3x2] -> [2x2] : LOLOS kompilasi
+C22 := A23 x B32;           // [2x3] x [3x2] -> [2x2] : COMPILES
 ```
 
-Perhatikan: kedua sisi `x` harus **tensor** (mat×mat, mat×vec, vec×mat).
-Perkalian dengan skalar memakai `*` (broadcast — lihat 7.4).
+Note: both sides of `x` must be **tensors** (mat×mat, mat×vec, vec×mat).
+Scalar multiplication uses `*` (broadcast — see 7.4).
 
-Jika bentuk tidak cocok, **kompilasi gagal seketika**:
+If the shapes do not match, **compilation fails immediately**:
 
 ```rust
 A: mat[2, 3] = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]];
 B: mat[4, 2] = [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]];
-C := A x B;   // <-- E204: [2x3] x [4x2]: kolom A (3) != baris B (4)
+C := A x B;   // <-- E204: [2x3] x [4x2]: columns of A (3) != rows of B (4)
 ```
 
-Pesan errornya visual dan menjelaskan solusi:
+The error message is visual and explains the fix:
 
 ```
 [X+ Type Error]: E204 Dimension Mismatch in Matrix Multiplication: [2 x 3] x [4 x 2]
@@ -381,18 +412,18 @@ Pesan errornya visual dan menjelaskan solusi:
   |
 13|     C := A x B;
   |          ^--------------------------------------
-  = kolom A (3) harus sama dengan baris B (4)
+  = columns of A (3) must equal rows of B (4)
 ```
 
-Ini fitur paling ikonik X+: **kesalahan aljabar linear tertangkap saat kompilasi,
-0ms runtime.**
+This is X+'s most iconic feature: **linear-algebra mistakes are caught at
+compile time, 0 ms of runtime.**
 
-### 7.3 Dot product `.x` — dan aturan spasi
+### 7.3 Dot product `.x` — and the spacing rule
 
-| Penulisan | Arti |
-|-----------|------|
-| `v1 .x v2` (dipisah spasi) | **Dot product** (di XIR: `bin dot`) |
-| `v.x` (menempel) | **Akses field** bernama `x` |
+| Writing | Meaning |
+|---------|---------|
+| `v1 .x v2` (separated by spaces) | **Dot product** (in XIR: `bin dot`) |
+| `v.x` (attached) | **Field access** to a field named `x` |
 
 ```rust
 v1: vec4 = [1.0, 2.0, 3.0, 4.0];
@@ -401,52 +432,53 @@ v2: vec4 = [2.0, 2.0, 2.0, 2.0];
 d := v1 .x v2;        // dot product -> 20.0
 ```
 
-Aturan ini konsisten dan terdokumentasi di SPECS.md: **spasi = operator dot
-product; menempel = member access.**
+This rule is consistent and documented in SPECS.md: **space = dot-product
+operator; attached = member access.**
 
-### 7.4 Broadcast skalar & elementwise
+### 7.4 Scalar broadcast & elementwise
 
-Elementwise vec (`+ - * /`) menerima skalar dan di-*broadcast* ke seluruh
-elemen — **pakai `*` untuk perkalian skalar** (operator `x` ketat hanya untuk
-matmul tensor × tensor):
+Elementwise vec operations (`+ - * /`) accept a scalar and *broadcast* it
+across all elements — **use `*` for scalar multiplication** (the `x` operator is
+strictly for tensor × tensor matmul):
 
 ```rust
-g := v1 * 2.0;        // skalar di-broadcast ke seluruh elemen -> [2.0, 4.0, 6.0, 8.0]
+g := v1 * 2.0;        // scalar broadcast across all elements -> [2.0, 4.0, 6.0, 8.0]
 h := v1 + v2;         // elementwise
-d := a - b;           // elementwise (dipakai stdlib & contoh jarak)
+d := a - b;           // elementwise (used by the stdlib & distance examples)
 ```
 
-### 7.5 Catatan penting token `x`
+### 7.5 Important note on the `x` token
 
-Token `x` adalah operator matmul **hanya di posisi infix** (`A x B`). Di posisi
-lain ia identifier biasa — `let x = 5` gaya lama maupun `x := 5` tetap sah.
+The `x` token is the matmul operator **only in infix position** (`A x B`).
+Everywhere else it is an ordinary identifier — both the old-style `let x = 5`
+and `x := 5` remain valid.
 
 ---
 
 ## 8. Pipeline Operator `|>`
 
-Data mengalir kiri ke kanan; nilai yang di-pipe menjadi **argumen pertama** fungsi
-berikutnya:
+Data flows left to right; the piped value becomes the **first argument** of the
+next function:
 
 ```rust
 raw_signal := [0.1, -0.5, 3.2, -1.2];
 
 raw_signal |> normalize |> relu |> scale(2.0) |> show_vec;
 
-// Pipeline matematika klasik:
+// Classic math pipelines:
 s := 30.0 |> math::deg_to_rad |> math::sin;
 mag := (3.0 ^ 2.0 + 4.0 ^ 2.0) |> math::sqrt;      // |(3,4)| = 5.0
 ```
 
-Pipeline membuat transformasi data terbaca seperti diagram alir — sangat pas
-untuk pengolahan sinyal dan pipeline ML mini. Contoh lengkap: `examples/pipeline.xp`.
+Pipelines make data transformations read like a flow diagram — a great fit for
+signal processing and mini ML pipelines. Full example: `examples/pipeline.xp`.
 
 ---
 
-## 9. comptime — Hitung Saat Kompilasi
+## 9. comptime — Compute at Compile Time
 
-`const` + blok `comptime { ... }` dievaluasi penuh oleh compiler — hasilnya
-ditanam ke bytecode, **0ms saat runtime**:
+`const` + a `comptime { ... }` block is fully evaluated by the compiler — the
+result is embedded in the bytecode, **0 ms at runtime**:
 
 ```rust
 const SIN_TABLE: [f64; 4] = comptime {
@@ -468,66 +500,67 @@ const FACTS: [f64; 6] = comptime {
 };
 ```
 
-Aturan CTFE (sesuai keputusan LOCKED di SPECS.md):
+CTFE rules (per the LOCKED decisions in SPECS.md):
 
-- **Pure functions only** — tanpa I/O, network, random, atau side-effect.
-- **Step limit 1.000.000 langkah** — pelanggaran menghentikan kompilasi dengan
-  `E220` (bukan hang selamanya).
-- Determinisme float CTFE memakai libm referensi host (v0.1); v0.5 memakai libm
-  internal software-based agar build reproducible.
+- **Pure functions only** — no I/O, network, randomness, or side effects.
+- **Step limit of 1,000,000 steps** — violations stop compilation with `E220`
+  (instead of hanging forever).
+- CTFE float determinism uses the host's reference libm (v0.1); v0.5 uses an
+  internal software-based libm so builds are reproducible.
 
-Kapan comptime berguna: tabel trigonometri, lookup faktorial, ekspansi ukuran
-buffer/kernel, dan validasi invariant numerik lebih awal.
+When comptime is useful: trigonometric tables, factorial lookups, buffer/kernel
+size expansion, and early validation of numeric invariants.
 
 ---
 
-## 10. rational — Pecahan Eksak
+## 10. rational — Exact Fractions
 
-Tipe `rational` berhitung pecahan **tanpa pembulatan** — cocok untuk kriptografi,
-keuangan (`decimal256`), dan riset bilangan:
+The `rational` type computes fractions **without rounding** — suitable for
+cryptography, finance (`decimal256`), and number-theory research:
 
 ```rust
 main => int32 {
     a: rational = 1/3;
     b: rational = 2/7;
 
-    exact_sum := a + b;      // tetap pecahan eksak: 13/21
+    exact_sum := a + b;      // stays an exact fraction: 13/21
     show(sys::out, "1/3 + 2/7 = {exact_sum}\n");
 
     fa := 1.0 / 3.0;
     fb := 2.0 / 7.0;
-    show(sys::out, "f64     : {fa + fb:.17}  (ada float error)\n");
-    show(sys::out, "rational: eksak 13/21 ✓\n");
+    show(sys::out, "f64     : {fa + fb:.17}  (has float error)\n");
+    show(sys::out, "rational: exactly 13/21 ✓\n");
     yield 0;
 }
 ```
 
-Cukup anotasi `rational` — literal `1/3` di konteks tipe tersebut otomatis menjadi
-pecahan eksak. Operasi `+ - * /` antar-rational menghasilkan rational kembali.
+Just annotate with `rational` — the literal `1/3` in that typed context
+automatically becomes an exact fraction. The operations `+ - * /` between
+rationals yield a rational again.
 
 ---
 
-## 11. Keamanan: guard, Result, T?, match, dan ?
+## 11. Safety: guard, Result, T?, match, and ?
 
-### 11.1 `guard` — prasyarat dini
+### 11.1 `guard` — early preconditions
 
-`guard kondisi else { ... }` menegaskan: *"kondisi ini harus benar, kalau tidak,
-keluar dari sini."* Dipakai bahkan oleh stdlib untuk mencari max/min:
+`guard condition else { ... }` asserts: *"this condition must hold; otherwise,
+leave here."* Even the stdlib uses it to find max/min:
 
 ```rust
 fn max(data) -> f64 {
-    terbesar := data[0];
+    largest := data[0];
     for x in data {
-        guard x <= terbesar else { terbesar = x; };
+        guard x <= largest else { largest = x; };
     }
-    yield terbesar;
+    yield largest;
 }
 ```
 
-### 11.2 `Result<T,E>` — sukses atau gagal, zero-overhead
+### 11.2 `Result<T,E>` — success or failure, zero-overhead
 
 ```rust
-fn bagi_aman(a: f64, b: f64) -> Result<f64, string> {
+fn safe_divide(a: f64, b: f64) -> Result<f64, string> {
     guard b != 0.0 else {
         return Err("division by zero");
     }
@@ -535,61 +568,61 @@ fn bagi_aman(a: f64, b: f64) -> Result<f64, string> {
 }
 ```
 
-### 11.3 Operator `?` — propagasi otomatis
+### 11.3 The `?` operator — automatic propagation
 
 ```rust
-fn hitung_rasio(a: f64, b: f64) -> Result<f64, string> {
-    hasil := bagi_aman(a, b)?;      // Err -> langsung ditularkan ke caller
-    return Ok(hasil * 100.0);
+fn compute_ratio(a: f64, b: f64) -> Result<f64, string> {
+    value := safe_divide(a, b)?;      // Err -> immediately propagated to the caller
+    return Ok(value * 100.0);
 }
 ```
 
-### 11.4 `match` — penanganan eksplisit
+### 11.4 `match` — explicit handling
 
 ```rust
-r2 := bagi_aman(1.0, 0.0);
+r2 := safe_divide(1.0, 0.0);
 match r2 {
-    Ok(v)  => { show(sys::out, "tidak mungkin\n"); }
+    Ok(v)  => { show(sys::out, "impossible\n"); }
     Err(e) => { show(sys::out, "1 / 0 -> Err({e})\n"); }
 }
 ```
 
-### 11.5 `T?` — optional, bebas nullptr/segfault
+### 11.5 `T?` — optional, free of nullptr/segfault
 
 ```rust
-fn cari_user(id: int32) -> string? {
+fn find_user(id: int32) -> string? {
     if id == 1 { return Some("Dimas"); }
     if id == 2 { return Some("Rina"); }
     return None;
 }
 
-u9 := cari_user(9);
+u9 := find_user(9);
 match u9 {
-    Some(nama) => { show(sys::out, "Ditemukan: {nama}\n"); }
-    None       => { show(sys::out, "ID 9: tidak ditemukan (tanpa segfault!)\n"); }
+    Some(name) => { show(sys::out, "Found: {name}\n"); }
+    None       => { show(sys::out, "ID 9: not found (no segfault!)\n"); }
 }
 ```
 
-Runtime panic yang tetap terjaga meski semua di atas lolos type check:
-`E301` overflow, `E302` div-zero, `E303` bounds, `E304` match fall-through,
-`E305` unwrap-Err, `E306` cast overflow.
+Runtime panics that still guard you even when everything above passes the type
+check: `E301` overflow, `E302` div-zero, `E303` bounds, `E304` match
+fall-through, `E305` unwrap-Err, `E306` cast overflow.
 
 ---
 
-## 12. arena — Memori Per-Scope
+## 12. arena — Per-Scope Memory
 
-`arena { ... }` adalah scope memori: seluruh alokasi di dalamnya dipantau
-compiler dan **dibersihkan serentak saat blok ditutup** (RAII-style, 1 siklus,
-0 fragmentasi):
+`arena { ... }` is a memory scope: every allocation inside it is tracked by the
+compiler and **released all at once when the block closes** (RAII-style, 1
+cycle, 0 fragmentation):
 
 ```rust
 main => int32 {
     arena {
-        batch := buat_batch(10);
-        variansi := statistics::variance(batch);
-        rata := statistics::mean(batch);
-        show(sys::out, "mean = {rata}\n");
-    }   // <- seluruh alokasi batch lenyap bersih seketika di sini
+        batch := make_batch(10);
+        var_ := statistics::variance(batch);
+        avg := statistics::mean(batch);
+        show(sys::out, "mean = {avg}\n");
+    }   // <- the entire batch allocation vanishes cleanly right here
 
     show(sys::out, "arena total : {@arena_total} bytes\n");
     show(sys::out, "arena peak  : {@arena_peak} bytes\n");
@@ -598,19 +631,21 @@ main => int32 {
 }
 ```
 
-Di XIR, arena diekspresikan sebagai pasangan `arena.enter` / `arena.exit` dengan
-garansi cleanup. Aturan *arena-first ownership*: array `[]` dan string dialokasi
-di arena scope lokal default; **global hanya boleh `const`/comptime** (global
-mutabel = compile error `E208`). Telemetri memori tersedia via SMV:
-`@arena_free`, `@arena_total`, `@arena_peak`, `@stack_usage`, `@heap_allocated`.
+In XIR, an arena is expressed as an `arena.enter` / `arena.exit` pair with a
+cleanup guarantee. The *arena-first ownership* rule: arrays `[]` and strings are
+allocated in the local arena scope by default; **globals may only be
+`const`/comptime** (a mutable global is compile error `E208`). Memory telemetry
+is available via SMVs: `@arena_free`, `@arena_total`, `@arena_peak`,
+`@stack_usage`, `@heap_allocated`.
 
 ---
 
 ## 13. @grad & @tensor_core
 
-### 13.1 `@grad(loss_func)` — autodiff numerik satu baris
+### 13.1 `@grad(loss_func)` — one-line numeric autodiff
 
-`@grad` menerima nama fungsi dan menghasilkan **fungsi turunannya** (numerik):
+`@grad` takes a function name and produces its **derivative function**
+(numerically):
 
 ```rust
 fn loss_func(x: f64) -> f64 {
@@ -620,19 +655,19 @@ fn loss_func(x: f64) -> f64 {
 main => int32 {
     grad_loss := @grad(loss_func);
     d_val := grad_loss(4.0);
-    show(sys::out, "@grad(x^2+3) di x=4.0 = {d_val:.4} (eksak: 8.0)\n");
+    show(sys::out, "@grad(x^2+3) at x=4.0 = {d_val:.4} (exact: 8.0)\n");
     yield 0;
 }
 ```
 
-Di level XIR, fungsi ber-@grad dipanggil melalui `callv` (dynamic call). Berguna
-untuk belajar kalkulus, menguji fungsi loss, dan pipeline pembelajaran mesin mini
-tanpa framework eksternal.
+At the XIR level, @grad functions are invoked through `callv` (dynamic call).
+Useful for learning calculus, testing loss functions, and mini machine-learning
+pipelines without any external framework.
 
-### 13.2 `@tensor_core { ... }` — offload ke akselerator
+### 13.2 `@tensor_core { ... }` — offload to an accelerator
 
-Anotasi tensor dipakai sebagai **blok** — isi blok dieksekusi lewat jalur
-akselerator (SIMD, simulasi):
+The tensor annotation is used as a **block** — the block's contents execute
+through the accelerator path (SIMD, simulated):
 
 ```rust
 @tensor_core {
@@ -643,35 +678,36 @@ akselerator (SIMD, simulasi):
 }
 ```
 
-Keluarga blok tensor lain di spesifikasi: `@gpu`, `@deterministic`, `@resilient`,
-`@enclave`. Kombinasikan dengan SMV `@simd_width` / `@tensor_backend` untuk
-menyetel ukuran kernel secara dinamis (lihat `examples/vec_simd.xp`).
+Other tensor block families in the spec: `@gpu`, `@deterministic`, `@resilient`,
+`@enclave`. Combine them with the SMVs `@simd_width` / `@tensor_backend` to tune
+kernel size dynamically (see `examples/vec_simd.xp`).
 
 ---
 
 ## 14. SMV — System Magic Variables
 
-**SMV (*System Magic Variables*)** adalah variabel khusus berawalan `@` yang
-disediakan lingkungan — tidak dideklarasikan, hanya-baca, dan bisa dipakai di
-ekspresi mana pun (termasuk di dalam string format `show` dan konteks `comptime`).
+**SMVs (*System Magic Variables*)** are special `@`-prefixed variables supplied
+by the environment — never declared, read-only, and usable in any expression
+(including inside `show` format strings and `comptime` contexts).
 
-### 14.1 Tabel SMV terimplementasi (v0.1)
+### 14.1 Implemented SMV table (v0.1)
 
-| Kelompok | SMV |
-|----------|-----|
-| **Matematika** | `@pi` `@euler` `@tau` `@phi` |
+| Group | SMV |
+|-------|-----|
+| **Math** | `@pi` `@euler` `@tau` `@phi` |
 | **Hardware/SIMD** | `@simd_width` `@simd_lane_count` `@is_simd_active` `@core_count` `@cpu_freq_mhz` `@thread_id` |
-| **Telemetri** | `@time_ns` `@uptime_ms` `@random_entropy` |
-| **Arena/Memori** | `@arena_free` `@arena_total` `@arena_peak` `@stack_usage` `@heap_allocated` `@is_unsafe` |
+| **Telemetry** | `@time_ns` `@uptime_ms` `@random_entropy` |
+| **Arena/Memory** | `@arena_free` `@arena_total` `@arena_peak` `@stack_usage` `@heap_allocated` `@is_unsafe` |
 | **Build** | `@compiler_ver` `@target_arch` `@target_os` `@build_profile` `@opt_level` `@tensor_backend` `@matrix_precision` `@ctfe_active` `@git_commit` `@build_timestamp` |
 | **Source/Debug** | `@file` `@line` `@col` `@function` `@call_depth` |
 | **App/AI** | `@app_name` `@environment` `@timezone` `@locale` `@log_level` `@terminal_width` `@debug_mode` `@batch_size` `@epoch_index` `@learning_rate` `@loss_value` |
 
-SMV di luar tabel (±120 lagi di spesifikasi: kelompok network, HTTP, aerospace,
-quantum, dll) ditolak compiler dengan **`E120`** plus saran nama terdekat.
-Roadmap v0.5 mengisinya sesuai ketersediaan backend.
+SMVs outside the table (±120 more in the spec: network, HTTP, aerospace,
+quantum groups, etc.) are rejected by the compiler with **`E120`** plus a
+nearest-name suggestion. The v0.5 roadmap fills them in as backends become
+available.
 
-### 14.2 Contoh pemakaian nyata
+### 14.2 A real usage example
 
 ```rust
 main => int32 {
@@ -693,36 +729,36 @@ main => int32 {
 }
 ```
 
-Jalankan sendiri: `xpc run examples/smv_demo.xp`. Untuk info CPU/VM yang
-menyusun nilai SMV dinamis: `xpc cpu-info` (deteksi AVX-512 / NEON / FMA3).
+Try it yourself: `xpc run examples/smv_demo.xp`. For the CPU/VM info that makes
+up the dynamic SMV values: `xpc cpu-info` (AVX-512 / NEON / FMA3 detection).
 
 ---
 
-## 15. Dunia Hardware di Dalam VM
+## 15. The Hardware World Inside the VM
 
-Semua "hardware" hanyalah simulasi — tetapi **semantiknya serius**: alamat
-register nyata, ISR dengan vector, dan instruksi CPU paling mendasar.
+All "hardware" is simulated — but the **semantics are serious**: real register
+addresses, ISRs with vectors, and the most fundamental CPU instructions.
 
-### 15.1 MMIO dengan `register` — type-safe, tanpa pointer cast
+### 15.1 MMIO with `register` — type-safe, no pointer casts
 
 ```rust
 register GPIOA_ODR: u32 @ 0x40020014;
 register GPIOA_BSRR: u32 @ 0x40020018;
 
 main => void {
-    GPIOA_ODR = 0b00000001;             // tulis register seperti variabel biasa!
-    show(sys::out, "GPIOA_ODR dibaca ulang: {GPIOA_ODR}\n");
+    GPIOA_ODR = 0b00000001;             // write a register like an ordinary variable!
+    show(sys::out, "GPIOA_ODR read back: {GPIOA_ODR}\n");
 
-    GPIOA_ODR = GPIOA_ODR + 2;          // operasi aritmetika checked pada u32
+    GPIOA_ODR = GPIOA_ODR + 2;          // checked arithmetic on u32
     show(sys::out, "GPIOA_ODR + 2 = {GPIOA_ODR}\n");
     yield 0;
 }
 ```
 
-Deklarasinya `register NAMA: tipe @ 0xALAMAT;` — VM mensimulasikan bus dan
-memvalidasi akses; tidak ada pointer mentah yang menyelinap.
+The declaration is `register NAME: type @ 0xADDRESS;` — the VM simulates the bus
+and validates accesses; no raw pointers slip through.
 
-### 15.2 `asm!` — inline assembly di dalam `unsafe`
+### 15.2 `asm!` — inline assembly inside `unsafe`
 
 ```rust
 unsafe {
@@ -733,47 +769,47 @@ unsafe {
 }
 ```
 
-Isi `asm!` berupa statement string. Blok `unsafe` menandai area di luar jaminan
-keamanan normal (lihat juga SMV `@is_unsafe`). Pasangkan dengan `xpc disasm`
-untuk melihat bagaimana kode X+ Anda diturunkan menjadi instruksi.
+The body of `asm!` is a list of string statements. The `unsafe` block marks an
+area outside the normal safety guarantees (see also the SMV `@is_unsafe`). Pair
+it with `xpc disasm` to see how your X+ code is lowered into instructions.
 
-### 15.3 `@interrupt(vector::NAMA)` — ISR registration
+### 15.3 `@interrupt(vector::NAME)` — ISR registration
 
 ```rust
 @interrupt(vector::EXTI0)
-fn tombol_ditekan_handler() => void {
+fn button_pressed_handler() => void {
     gpio::toggle(13);
 }
 ```
 
-### 15.4 Simulator board
+### 15.4 Board simulator
 
 ```bash
-xpc run examples/iot_led.xp                          # eksekusi normal
-xpc simulate examples/iot_led.xp --board=esp32       # emulator embedded on-RAM
+xpc run examples/iot_led.xp                          # normal execution
+xpc simulate examples/iot_led.xp --board=esp32       # on-RAM embedded emulator
 ```
 
-Contoh `iot_led.xp` menyalakan-mematikan LED GPIO 2 (LED bawaan ESP32) via
+The `iot_led.xp` example blinks GPIO 2 (the ESP32's built-in LED) via
 `gpio::mode(2, gpio::OUTPUT)` → `gpio::write(2, gpio::HIGH/LOW)` →
-`time::delay_ms(100)` — lab mikrokontroler tanpa satu pun kabel.
+`time::delay_ms(100)` — a microcontroller lab without a single wire.
 
 ---
 
-## 16. Sistem Error & Diagnostik Visual
+## 16. Error System & Visual Diagnostics
 
-Semua error X+ berkode dan berkategori:
+All X+ errors are coded and categorized:
 
-| Kode | Kategori | Contoh |
-|------|----------|--------|
-| **E1xx** | Sintaks | token tak terduga, kurung tidak seimbang |
-| **E120** | SMV tak dikenal | `@tidak_ada` → saran nama terdekat |
-| **E2xx** | Tipe/compile | `E204` dimensi matmul, `E208` global mutabel |
-| **E220** | CTFE | batas 1.000.000 langkah terlampaui |
+| Code | Category | Example |
+|------|----------|---------|
+| **E1xx** | Syntax | unexpected token, unbalanced parentheses |
+| **E120** | Unknown SMV | `@does_not_exist` → nearest-name suggestion |
+| **E2xx** | Type/compile | `E204` matmul dimensions, `E208` mutable global |
+| **E220** | CTFE | 1,000,000-step limit exceeded |
 | **E3xx** | Runtime | `E301` overflow, `E302` div-zero, `E303` bounds, `E304` match fall-through, `E305` unwrap-Err, `E306` cast overflow |
-| **W1xx** | Warning | dari `xpc lint` |
+| **W1xx** | Warning | from `xpc lint` |
 
-Format diagnostiknya visual — baris sumber, caret penunjuk kolom, kode, dan
-bantuan dalam bahasa Indonesia:
+The diagnostic format is visual — source line, a caret pointing at the column,
+the code, and a help message:
 
 ```
 [X+ Type Error]: E204 Dimension Mismatch in Matrix Multiplication: [2 x 3] x [4 x 2]
@@ -781,176 +817,177 @@ bantuan dalam bahasa Indonesia:
   |
 13|     C := A x B;
   |          ^--------------------------------------
-  = kolom A (3) harus sama dengan baris B (4)
+  = columns of A (3) must equal rows of B (4)
 ```
 
-Proteksi runtime yang bekerja otomatis: integer checked (wrap eksplisit `+% -% *%`
-bila memang dimaksudkan), bounds checking, dan stack guard XVM. Error CLI keluar
-dengan exit code `70` sehingga mudah ditangkap script CI.
+Runtime protections that work automatically: checked integers (explicit wrapping
+`+% -% *%` when truly intended), bounds checking, and the XVM stack guard. CLI
+errors exit with code `70`, making them easy to catch in CI scripts.
 
 ---
 
-## 17. XIR & Bytecode .xbc
+## 17. XIR & the .xbc Bytecode
 
-Pipeline kompilasi X+:
+The X+ compilation pipeline:
 
 ```
 hello.xp ─▶ lexer ─▶ parser (AST) ─▶ type checker ─▶ XIR (SSA) ─▶ .xbc ─▶ XVM
 ```
 
-**XIR** (*X+ Intermediate Representation*) — SSA-flavored (temp `%N`, variabel
-blok `%v_name`), tensor first-class, arena marker eksplisit, backend-agnostic
-(siap diturunkan ke Cranelift/LLVM di v0.5). Kategori instruksinya:
+**XIR** (*X+ Intermediate Representation*) — SSA-flavored (temps `%N`, block
+variables `%v_name`), first-class tensors, explicit arena markers,
+backend-agnostic (ready to be lowered to Cranelift/LLVM in v0.5). Instruction
+categories:
 
-| Kategori | Instruksi (contoh) |
-|----------|--------------------|
+| Category | Instructions (examples) |
+|----------|-------------------------|
 | Dataflow | `const` `mov` `bin` `un` `cast` `smv` |
-| Tensor | `bin matmul` `bin dot`, elementwise vec, broadcast skalar |
-| Kontrol | `label` `jmp` `jz` `jnz` `ret` `panic` |
-| Panggilan | `call @fn(args)` `callv` (dynamic: fnref/@grad) `native` |
+| Tensor | `bin matmul` `bin dot`, elementwise vec, scalar broadcast |
+| Control | `label` `jmp` `jz` `jnz` `ret` `panic` |
+| Calls | `call @fn(args)` `callv` (dynamic: fnref/@grad) `native` |
 | Output | `show chan, fmt, args, specs` |
-| Memori | `array` `fill_array` `index_get` `index_set` `struct` `member` `set_member` |
+| Memory | `array` `fill_array` `index_get` `index_set` `struct` `member` `set_member` |
 | Monadic | `wrap_ok` `wrap_err` `wrap_some` `wrap_none` `propagate` (=`?`) `extract` |
 | Arena | `arena.enter` `arena.exit` (RAII) |
-| Konkurensi | `task.spawn` `task.wrap` `task.unwrap` (async eager) |
+| Concurrency | `task.spawn` `task.wrap` `task.unwrap` (eager async) |
 | Metal | `unsafe.enter/exit` `asm` `reg_read` `reg_write` `verify` |
-| Trace | `line N` (source mapping untuk panic report) |
+| Trace | `line N` (source mapping for panic reports) |
 
-Intip sendiri:
+Peek inside yourself:
 
 ```bash
-xpc ast hello.xp       # dump AST (JSON)
+xpc ast hello.xp       # dump the AST (JSON)
 xpc ir hello.xp        # dump XIR
-xpc asm hello.xp       # pemetaan ilustratif ke assembly native (SIMD)
-xpc disasm hello.xbc   # bongkar bytecode
+xpc asm hello.xp       # illustrative mapping to native assembly (SIMD)
+xpc disasm hello.xbc   # disassemble bytecode
 ```
 
-**`.xbc`** — kontainer bytecode portabel:
+**`.xbc`** — a portable bytecode container:
 
 ```
 offset  size  field
 0       4     magic  "XBC1"
 4       4     version u8, flags u8, reserved u16   (LE)
-8       4     header_len u32 (LE) — header JSON
-12      N     header JSON: xpc_version, target, fast_math, opt_level,
+8       4     header_len u32 (LE) — JSON header
+12      N     JSON header: xpc_version, target, fast_math, opt_level,
               build_timestamp, structs, enums, registers
 12+N    4     body_len u32 (LE)
 16+N    M     body: zlib(JSON { funcs, consts, structs, enums, registers })
 ```
 
-File `.xbc` bisa dieksekusi langsung: `xpc app.xbc` (argumen file `.xbc`
-otomatis diteruskan ke mode `run --no-artifact`).
+A `.xbc` file can be executed directly: `xpc app.xbc` (a `.xbc` file argument is
+automatically forwarded to `run --no-artifact` mode).
 
 ---
 
-## 18. Referensi CLI: xpc (40 Subperintah)
+## 18. CLI Reference: xpc (40 Subcommands)
 
-`xpc` adalah pintu masuk seluruh toolchain — **40 subperintah** dalam 7 kelompok.
-Flag global: `--version`, `-s/--silent`, `--no-color`, `--target`, `--tmp-dir`,
-`--no-cache`.
+`xpc` is the single entry point to the whole toolchain — **40 subcommands** in 7
+groups. Global flags: `--version`, `-s/--silent`, `--no-color`, `--target`,
+`--tmp-dir`, `--no-cache`.
 
-### Kelompok: Compile & Eksekusi
+### Group: Compile & Execute
 
-| Perintah | Fungsi |
-|----------|--------|
-| `xpc run <file.xp>` | Compile ke RAM (.xbc tmpfs) + eksekusi langsung |
-| `xpc check <file.xp>` | Validasi sintaks + tipe (output → /dev/null, kilat) |
-| `xpc lint <file.xp>` | Check + static analysis tambahan |
-| `xpc ast <file.xp>` | Dump Abstract Syntax Tree (JSON) |
+| Command | Function |
+|---------|----------|
+| `xpc run <file.xp>` | Compile to RAM (tmpfs .xbc) + execute immediately |
+| `xpc check <file.xp>` | Validate syntax + types (output → /dev/null, instant) |
+| `xpc lint <file.xp>` | Check + additional static analysis |
+| `xpc ast <file.xp>` | Dump the Abstract Syntax Tree (JSON) |
 | `xpc ir <file.xp>` | Dump XIR (SSA-flavored, backend-agnostic) |
-| `xpc asm <file.xp>` | Pemetaan ilustratif ke assembly native (SIMD) |
-| `xpc disasm <file.xbc>` | Disassembly file .xbc |
-| `xpc compile <file.xp>` | AOT compile → .xbc di tmpfs (bukan folder proyek) |
-| `xpc build <file.xp>` | Build .xbc ke path eksplisit (distribusi) |
+| `xpc asm <file.xp>` | Illustrative mapping to native assembly (SIMD) |
+| `xpc disasm <file.xbc>` | Disassemble a .xbc file |
+| `xpc compile <file.xp>` | AOT compile → .xbc in tmpfs (not the project folder) |
+| `xpc build <file.xp>` | Build .xbc to an explicit path (distribution) |
 
-### Kelompok: Pengukuran
+### Group: Measurement
 
-| Perintah | Fungsi |
-|----------|--------|
-| `xpc time <file.xp>` | Ukur waktu compile vs eksekusi |
-| `xpc bench <file.xp>` | Micro-benchmark ns-level (`--runs N`) |
+| Command | Function |
+|---------|----------|
+| `xpc time <file.xp>` | Measure compile vs. execution time |
+| `xpc bench <file.xp>` | ns-level micro-benchmark (`--runs N`) |
 
-### Kelompok: Pengembangan
+### Group: Development
 
-| Perintah | Fungsi |
-|----------|--------|
-| `xpc init` | Inisialisasi proyek X+ di direktori ini |
-| `xpc new <nama>` | mkdir + init proyek baru |
-| `xpc fmt <file.xp>` | Format ulang kode .xp sesuai standar |
-| `xpc watch <file.xp>` | Hot-reload: recompile tiap file berubah |
-| `xpc repl` | REPL interaktif X+ (JIT di RAM) |
+| Command | Function |
+|---------|----------|
+| `xpc init` | Initialize an X+ project in this directory |
+| `xpc new <name>` | mkdir + init a new project |
+| `xpc fmt <file.xp>` | Reformat .xp code to the standard style |
+| `xpc watch <file.xp>` | Hot-reload: recompile on every file change |
+| `xpc repl` | Interactive X+ REPL (JIT in RAM) |
 
-### Kelompok: Package Manager
+### Group: Package Manager
 
-| Perintah | Fungsi |
-|----------|--------|
-| `xpc install <lib>` | Unduh library dari X-Ples/Liblary |
-| `xpc uninstall <lib>` | Hapus library dari cache lokal |
-| `xpc update <lib>` | Update library ke versi terbaru |
-| `xpc list` | Daftar library terpasang |
-| `xpc search <kata>` | Cari modul di registry |
-| `xpc info <lib>` | Detail paket di registry |
-| `xpc purge` | Hapus seluruh cache library |
-| `xpc audit` | Audit usang/korup library lokal |
+| Command | Function |
+|---------|----------|
+| `xpc install <lib>` | Download a library from X-Ples/Liblary |
+| `xpc uninstall <lib>` | Remove a library from the local cache |
+| `xpc update <lib>` | Update a library to the latest version |
+| `xpc list` | List installed libraries |
+| `xpc search <keyword>` | Search modules in the registry |
+| `xpc info <lib>` | Package details in the registry |
+| `xpc purge` | Delete the entire library cache |
+| `xpc audit` | Audit outdated/corrupt local libraries |
 
-### Kelompok: Environment & Diagnosa
+### Group: Environment & Diagnostics
 
-| Perintah | Fungsi |
-|----------|--------|
-| `xpc env` | Konfigurasi aktif xpc |
-| `xpc doctor` | Diagnosis kesehatan toolchain |
-| `xpc cpu-info` | Deteksi AVX-512 / NEON / FMA3 |
-| `xpc clean` | Bersihkan tmpfs build |
-| `xpc cache-size` | Ukuran cache library + tmpfs |
-| `xpc flags` | Flag optimizer internal aktif |
-| `xpc tune` | Tuning per mikrositus CPU (`--arch`) |
-| `xpc version` | Versi CLI + compiler + target |
-| `xpc self-update` | Update xpc itu sendiri |
+| Command | Function |
+|---------|----------|
+| `xpc env` | Active xpc configuration |
+| `xpc doctor` | Toolchain health diagnosis |
+| `xpc cpu-info` | Detect AVX-512 / NEON / FMA3 |
+| `xpc clean` | Clean the tmpfs build |
+| `xpc cache-size` | Size of the library cache + tmpfs |
+| `xpc flags` | Active internal optimizer flags |
+| `xpc tune` | Per-CPU-microarchitecture tuning (`--arch`) |
+| `xpc version` | CLI + compiler + target versions |
+| `xpc self-update` | Update xpc itself |
 
-### Kelompok: SIMD & Memori
+### Group: SIMD & Memory
 
-| Perintah | Fungsi |
-|----------|--------|
-| `xpc vectorize <file>` | Loop mana yang bisa SIMD |
-| `xpc sim-profile <file>` | Profil efisiensi vectorization |
-| `xpc cache-fit <file>` | Cek muat L1 data cache |
-| `xpc mem-check <file>` | Audit strict ownership + leak |
-| `xpc bounds-check <file>` | Audit out-of-bounds statis |
+| Command | Function |
+|---------|----------|
+| `xpc vectorize <file>` | Which loops can be SIMD-vectorized |
+| `xpc sim-profile <file>` | Vectorization efficiency profile |
+| `xpc cache-fit <file>` | Check fit in the L1 data cache |
+| `xpc mem-check <file>` | Strict ownership + leak audit |
+| `xpc bounds-check <file>` | Static out-of-bounds audit |
 
-### Kelompok: IoT
+### Group: IoT
 
-| Perintah | Fungsi |
-|----------|--------|
-| `xpc simulate <file>` | Simulator embedded on-RAM (`--board=esp32`) |
+| Command | Function |
+|---------|----------|
+| `xpc simulate <file>` | On-RAM embedded simulator (`--board=esp32`) |
 
-**Alur kerja harian yang umum:**
+**A common daily workflow:**
 
 ```bash
-xpc check main.xp      # 1. validasi cepat (tanpa eksekusi)
-xpc lint main.xp       # 2. static analysis tambahan
-xpc run main.xp        # 3. jalankan
-xpc build main.xp      # 4. produksi .xbc untuk didistribusikan
+xpc check main.xp      # 1. quick validation (no execution)
+xpc lint main.xp       # 2. extra static analysis
+xpc run main.xp        # 3. run
+xpc build main.xp      # 4. produce a .xbc to distribute
 ```
 
 ---
 
 ## 19. Standard Library
 
-Standard library X+ **ditulis 100% dalam bahasa X+ sendiri** (folder `libs/`) —
-kode sumbernya bisa Anda baca dan jadikan referensi gaya penulisan library.
-Entri resminya terdaftar di `libs/registry.toml`:
+The X+ standard library is **written 100% in X+ itself** (the `libs/` folder) —
+you can read the source and use it as a style reference for writing libraries.
+Official entries are registered in `libs/registry.toml`:
 
-| Library | Versi | Deskripsi resmi |
-|---------|-------|-----------------|
-| `math` | 2.8.1 | Fast-math trigonometri, logaritma & linear algebra (SIMD-accelerated: AVX-512 / NEON) |
-| `strng` | 1.4.0 | Utilitas string: transform, query & zero-copy slice |
-| `string` | 1.4.0 | Alias resmi strng.xp (kompatibilitas nama panjang) |
-| `time` | 1.1.3 | Delay, timestamp & clock presisi nanodetik |
-| `statistics` | 0.9.2 | Statistik dasar: mean, variance, std — vectorized loop |
-| `gpio` | 0.5.0 | Bare-metal GPIO untuk ESP32/STM32 + board simulator |
-| `task` | 0.3.0 | Task-based concurrency & green threads (M:N scheduler v0.5) |
+| Library | Version | Official description |
+|---------|---------|----------------------|
+| `math` | 2.8.1 | Fast-math trigonometry, logarithms & linear algebra (SIMD-accelerated: AVX-512 / NEON) |
+| `strng` | 1.4.0 | String utilities: transform, query & zero-copy slice |
+| `string` | 1.4.0 | Official alias for strng.xp (long-name compatibility) |
+| `time` | 1.1.3 | Delay, timestamp & nanosecond-precision clock |
+| `statistics` | 0.9.2 | Basic statistics: mean, variance, std — vectorized loops |
+| `gpio` | 0.5.0 | Bare-metal GPIO for ESP32/STM32 + board simulator |
+| `task` | 0.3.0 | Task-based concurrency & green threads (M:N scheduler in v0.5) |
 
-Contoh konsumsi library (dari `examples/library_user.xp`):
+Library consumption example (from `examples/library_user.xp`):
 
 ```rust
 using = <<math.xp>>
@@ -958,16 +995,16 @@ using = <<strng.xp>>
 using = <<statistics.xp>>
 
 main => int32 {
-    // math:: — trigonometri SIMD-accelerated
+    // math:: — SIMD-accelerated trigonometry
     s := math::sin_deg(30.0);
     show(sys::out, "math::sin_deg(30) = {s:.4}\n");
 
-    // strng:: — utilitas string
-    nama := "x-plus";
-    show(sys::out, "strng::to_upper = {strng::to_upper(nama)}\n");
-    show(sys::out, "strng::replace   = {strng::replace(nama, \"-\", \" plus \")}\n");
+    // strng:: — string utilities
+    name := "x-plus";
+    show(sys::out, "strng::to_upper = {strng::to_upper(name)}\n");
+    show(sys::out, "strng::replace   = {strng::replace(name, \"-\", \" plus \")}\n");
 
-    // statistics:: — riset data
+    // statistics:: — data research
     dataset := [12.5, 14.1, 13.8, 15.2];
     show(sys::out, "statistics::mean = {statistics::mean(dataset)}\n");
     show(sys::out, "statistics::std  = {statistics::std(dataset):.4}\n");
@@ -975,76 +1012,77 @@ main => int32 {
 }
 ```
 
-Pola penting: **`using = <<nama.xp>>;`** untuk mengimpor, lalu fungsi library
-dipanggil lewat **namespace implisit** `nama_file::fungsi(...)` — mis. `math::sqrt`,
-`gpio::write`, `statistics::mean`.
+The key pattern: **`using = <<name.xp>>;`** to import, then library functions
+are called through the **implicit namespace** `file_name::function(...)` — e.g.
+`math::sqrt`, `gpio::write`, `statistics::mean`.
 
 ---
 
-## 20. Sistem Resolusi Library (Offline-First)
+## 20. Library Resolution System (Offline-First)
 
-Ketika program menulis `using = <<geomplus.xp>>`, resolver `xpc` mencari library
-dengan **urutan empat tingkat**:
+When a program writes `using = <<geomplus.xp>>`, the `xpc` resolver searches for
+the library in **four levels**, in order:
 
 ```
 using = <<geomplus.xp>>
    │
    ▼
 ┌────────────────────────────────────────────────────────────────────┐
-│ 1) ./libs/geomplus.xp        (library lokal proyek ini)            │
-│ 2) ~/.xpc/libs/geomplus.xp   (cache global milik pengguna)         │
-│ 3) stdlib bundled            (libs/ bawaan toolchain)              │
+│ 1) ./libs/geomplus.xp        (this project's local library)        │
+│ 2) ~/.xpc/libs/geomplus.xp   (the user's global cache)             │
+│ 3) bundled stdlib            (the libs/ shipped with the toolchain)│
 │ 4) GitHub raw                (X-Ples/Liblary — silent fetch,       │
-│                               timeout 5s, lalu di-cache)           │
+│                               5s timeout, then cached)             │
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-Konsekuensi desain:
+Design consequences:
 
-- **Offline-first.** Tingkat 1–3 tidak butuh internet. Internet hanya untuk
-  menarik library publik baru (tingkat 4, silent dengan timeout 5 detik).
-- **Deterministik.** Library lokal selalu menang — praktis untuk override percobaan.
-- **Lockfile `xpc.lock`** (format TOML) mencatat version, origin, dan **SHA-256**
-  tiap paket — build dapat direproduksi dan ter-audit (`xpc audit`).
-- **`--no-cache`** memaksa re-download; `xpc purge` membersihkan seluruh cache.
+- **Offline-first.** Levels 1–3 need no internet. The internet is only used to
+  pull new public libraries (level 4, silent with a 5-second timeout).
+- **Deterministic.** The local library always wins — handy for experimental overrides.
+- **`xpc.lock` lockfile** (TOML format) records the version, origin, and
+  **SHA-256** of every package — builds are reproducible and auditable
+  (`xpc audit`).
+- **`--no-cache`** forces a re-download; `xpc purge` clears the whole cache.
 
 ---
 
-## 21. Tutorial: Membuat Library Pribadi
+## 21. Tutorial: Building a Private Library
 
-Kita akan membuat library `geomplus` (operasi geometri vektor) dan memakainya
-dari program sendiri. **Tidak perlu GitHub, tidak perlu internet.**
+We will build a library called `geomplus` (vector geometry operations) and use
+it from our own program. **No GitHub, no internet required.**
 
-### Langkah 1 — siapkan folder library
+### Step 1 — prepare the library folder
 
-Library lokal diletakkan di folder `libs/` proyek (tingkat resolusi 1):
+Local libraries live in the project's `libs/` folder (resolution level 1):
 
 ```bash
 cd ~/X+
 mkdir -p libs
 ```
 
-### Langkah 2 — tulis library (`libs/geomplus.xp`)
+### Step 2 — write the library (`libs/geomplus.xp`)
 
 ```rust
 // ==========================================
-// geomplus — operasi geometri tambahan X+
-// Namespace implisit: geomplus::
-// versi 0.1.0
+// geomplus — extra X+ geometry operations
+// Implicit namespace: geomplus::
+// version 0.1.0
 // ==========================================
 
-pub fn jarak(a: vec2, b: vec2) -> f64 {
+pub fn distance(a: vec2, b: vec2) -> f64 {
     d := a - b;
-    return sqrt(d .x d);        // sqrt = native intrinsic; `.x` dot product
+    return sqrt(d .x d);        // sqrt = native intrinsic; `.x` is the dot product
 }
 
-pub fn titik_tengah(a: vec2, b: vec2) -> vec2 {
-    return (a + b) * 0.5;       // `*` broadcast skalar
+pub fn midpoint(a: vec2, b: vec2) -> vec2 {
+    return (a + b) * 0.5;       // `*` broadcasts the scalar
 }
 
 pub fn lerp(a: vec2, b: vec2, t: f64) -> vec2 {
     guard t >= 0.0 && t <= 1.0 else {
-        // di luar rentang: kembalikan endpoint terdekat
+        // out of range: return the nearest endpoint
         if t < 0.0 { return a; }
         return b;
     }
@@ -1052,12 +1090,12 @@ pub fn lerp(a: vec2, b: vec2, t: f64) -> vec2 {
 }
 ```
 
-> Gaya yang disarankan (ditiru dari stdlib): header komentar dengan nama
-> namespace, `pub fn` untuk API publik, fungsi helper tanpa `pub`, dan `guard`
-> untuk memvalidasi prasyarat. Catatan: `sqrt` adalah **native intrinsic**
-> (SPECS.md §6) — bisa dipanggil langsung tanpa import.
+> Recommended style (copied from the stdlib): a header comment with the
+> namespace name, `pub fn` for the public API, helper functions without `pub`,
+> and `guard` to validate preconditions. Note: `sqrt` is a **native intrinsic**
+> (SPECS.md §6) — it can be called directly without an import.
 
-### Langkah 3 — pakai dari program utama (`main.xp`)
+### Step 3 — use it from the main program (`main.xp`)
 
 ```rust
 using = <<geomplus.xp>>
@@ -1066,328 +1104,334 @@ main => int32 {
     a: vec2 = [0.0, 0.0];
     b: vec2 = [3.0, 4.0];
 
-    show(sys::out, "jarak        = {geomplus::jarak(a, b)}\n");        // 5.0
-    show(sys::out, "titik_tengah = {geomplus::titik_tengah(a, b)}\n");  // [1.5, 2.0]
+    show(sys::out, "distance     = {geomplus::distance(a, b)}\n");     // 5.0
+    show(sys::out, "midpoint     = {geomplus::midpoint(a, b)}\n");     // [1.5, 2.0]
     show(sys::out, "lerp t=0.5   = {geomplus::lerp(a, b, 0.5)}\n");
     yield 0;
 }
 ```
 
-### Langkah 4 — periksa dan jalankan
+### Step 4 — check and run
 
 ```bash
-xpc check main.xp     # validasi sintaks + tipe (termasuk panggilan geomplus)
+xpc check main.xp     # validate syntax + types (including geomplus calls)
 xpc run main.xp
 ```
 
-Resolver menemukan `geomplus` di **tingkat 1** (`./libs/`) — selesai.
+The resolver finds `geomplus` at **level 1** (`./libs/`) — done.
 
-### Langkah 5 — (opsional) jadikan global untuk semua proyek
+### Step 5 — (optional) make it global for all projects
 
-Pasang ke cache personal agar bisa di-`using` dari proyek mana pun di mesin ini
-(tingkat resolusi 2):
+Install it into your personal cache so it can be `using`-ed from any project on
+this machine (resolution level 2):
 
 ```bash
-cp libs/geomplus.xp ~/.xpc/libs/   # salin manual ke cache personal
-xpc list                           # verifikasi terpasang
-xpc cache-size                     # lihat ukuran cache
+cp libs/geomplus.xp ~/.xpc/libs/   # manually copy into the personal cache
+xpc list                           # verify it is installed
+xpc cache-size                     # view the cache size
 ```
 
-(`xpc install <nama>` dipakai untuk paket **registry** — berguna setelah
-library Anda terdaftar di X-Ples/Liblary, bagian 22. Ia juga otomatis menulis
-lockfile `xpc.lock` berisi SHA-256.)
+(`xpc install <name>` is for **registry** packages — useful once your library is
+registered in X-Ples/Liblary, Section 22. It also automatically writes the
+`xpc.lock` lockfile containing the SHA-256.)
 
-Sekarang `using = <<geomplus.xp>>` bekerja di **semua** proyek tanpa menyalin
-file lagi. Gunakan `xpc audit` berkala untuk memeriksa library usang/korup.
+Now `using = <<geomplus.xp>>` works in **every** project without copying the
+file again. Run `xpc audit` periodically to check for outdated/corrupt libraries.
 
-> **Hasil uji nyata** dari kode di atas (diverifikasi dengan `xpc run`):
-> `jarak = 5.0`, `titik_tengah = [1.5, 2.0]`, `lerp t=0.5 = [1.5, 2.0]`.
+> **Real test result** of the code above (verified with `xpc run`):
+> `distance = 5.0`, `midpoint = [1.5, 2.0]`, `lerp t=0.5 = [1.5, 2.0]`.
 
 ---
 
-## 22. Tutorial: Publikasi ke X-Ples/Liblary (Fork + PR)
+## 22. Tutorial: Publishing to X-Ples/Liblary (Fork + PR)
 
-Ingin library Anda dipakai **semua pengguna X+ di dunia**? Kumpulkan di
-repositori **`github.com/X-Ples/Liblary`** — pusat registry resmi X+ dengan
-base URL:
+Want your library used by **every X+ user in the world**? Collect it in the
+**`github.com/X-Ples/Liblary`** repository — the official central X+ registry,
+with this base URL:
 
 ```
 https://raw.githubusercontent.com/X-Ples/Liblary/main/
 ```
 
-Setelah PR Anda di-merge, siapa pun yang menulis `using = <<geomplus.xp>>`
-otomatis mendapatkan library Anda (tingkat resolusi 4: silent fetch + cache).
+Once your PR is merged, anyone who writes `using = <<geomplus.xp>>` will
+automatically get your library (resolution level 4: silent fetch + cache).
 
-### Prasyarat
+### Prerequisites
 
-- Akun GitHub.
-- `git` terpasang (di Termux: `pkg install git`).
-- Library lolos `xpc check` dan contohnya bisa dijalankan.
+- A GitHub account.
+- `git` installed (on Termux: `pkg install git`).
+- A library that passes `xpc check`, with an example that can be run.
 
-### Langkah 1 — fork repositori
+### Step 1 — fork the repository
 
-Buka `https://github.com/X-Ples/Liblary` → tombol **Fork**. Anda mendapat
-salinan: `github.com/<username>/Liblary`.
+Open `https://github.com/X-Ples/Liblary` → the **Fork** button. You get a copy:
+`github.com/<username>/Liblary`.
 
-### Langkah 2 — clone fork dan buat branch
+### Step 2 — clone your fork and create a branch
 
 ```bash
 git clone https://github.com/<username>/Liblary.git
 cd Liblary
-git checkout -b lib/geomplus        # konvensi branch: lib/<nama-library>
+git checkout -b lib/geomplus        # branch convention: lib/<library-name>
 ```
 
-### Langkah 3 — tambahkan folder library
+### Step 3 — add the library folder
 
-Satu **folder per library** — path-nya yang didaftarkan di registry (lihat
-entri `math`: `path = "math/math.xp"`):
+One **folder per library** — its path is what gets registered in the registry
+(see the `math` entry: `path = "math/math.xp"`):
 
 ```bash
 mkdir -p geomplus
-# geomplus/geomplus.xp   — kode library (pub fn + header komentar namespace)
-# geomplus/contoh.xp     — program contoh yang bisa dijalankan
-# geomplus/README.md     — deskripsi + cara pakai
+# geomplus/geomplus.xp   — library code (pub fn + namespace header comment)
+# geomplus/example.xp    — a runnable example program
+# geomplus/README.md     — description + usage
 ```
 
-### Langkah 4 — daftarkan di `registry.toml`
+### Step 4 — register it in `registry.toml`
 
-Buka `registry.toml` di root repositori, tambahkan entri mengikuti format
-`[packages.<nama>]` yang sudah ada:
+Open `registry.toml` at the repository root and add an entry following the
+existing `[packages.<name>]` format:
 
 ```toml
 [packages.geomplus]
 version = "0.1.0"
-author = "<nama-anda> (<email-anda>)"
+author = "<your-name> (<your-email>)"
 path = "geomplus/geomplus.xp"
 size_kb = 0.55
-date = "19/okt/2026"
-description = "Operasi geometri vec2: jarak, titik tengah, interpolasi linear"
+date = "19/Oct/2026"
+description = "vec2 geometry operations: distance, midpoint, linear interpolation"
 ```
 
-### Langkah 5 — uji persis seperti pengguna lain
+### Step 5 — test exactly like any other user
 
-Simulasikan pengguna yang hanya punya cache — tanpa jalur lokal:
+Simulate a user who only has the cache — no local path:
 
 ```bash
 cp geomplus/geomplus.xp ~/.xpc/libs/
-cd /tmp && mkdir uji && cd uji
-# buat main.xp berisi using = <<geomplus.xp>> + pemanggilan, lalu:
+cd /tmp && mkdir test && cd test
+# create main.xp containing using = <<geomplus.xp>> + calls, then:
 xpc run main.xp
 ```
 
-Jalankan juga `geomplus/contoh.xp` dari folder repo. **PR dengan contoh yang
-gagal dijalankan akan diminta revisi.**
+Also run `geomplus/example.xp` from the repo folder. **A PR whose example fails
+to run will be asked for revision.**
 
-### Langkah 6 — commit dan push
+### Step 6 — commit and push
 
 ```bash
 git add geomplus/ registry.toml
-git commit -m "add geomplus v0.1.0 — geometri vec2 (jarak, midpoint, lerp)"
+git commit -m "add geomplus v0.1.0 — vec2 geometry (distance, midpoint, lerp)"
 git push origin lib/geomplus
 ```
 
-### Langkah 7 — buka Pull Request
+### Step 7 — open a Pull Request
 
-Di GitHub: fork Anda → **Compare & pull request** → target `X-Ples/Liblary`
-branch `main`. Isi deskripsi PR:
+On GitHub: your fork → **Compare & pull request** → target `X-Ples/Liblary`
+branch `main`. Fill in the PR description:
 
 ```markdown
-## Library baru: geomplus v0.1.0
+## New library: geomplus v0.1.0
 
-**Apa:** operasi geometri vec2 — jarak, titik tengah, interpolasi linear.
-**Kenapa berguna:** memakai vec2 native, dot product `.x`, dan pipeline `|>`
-sehingga lolos shape checking saat kompilasi.
+**What:** vec2 geometry operations — distance, midpoint, linear interpolation.
+**Why it is useful:** uses native vec2, the `.x` dot product, and the `|>`
+pipeline, so it passes shape checking at compile time.
 
-**Sudah diuji:**
-- [x] xpc check lolos untuk semua file
-- [x] contoh.xp berjalan: output sesuai dokumentasi
-- [x] entri registry.toml mengikuti format [packages.<nama>]
-- [x] tidak mengubah library milik kontributor lain
+**Tested:**
+- [x] xpc check passes for all files
+- [x] example.xp runs: output matches the documentation
+- [x] registry.toml entry follows the [packages.<name>] format
+- [x] does not modify other contributors' libraries
 ```
 
-### Langkah 8 — review dan merge
+### Step 8 — review and merge
 
-Setelah **di-merge**, `xpc search geomplus` dan `xpc info geomplus` akan
-menemukannya di registry, dan `xpc install geomplus` menariknya langsung dari
-`X-Ples/Liblary`. Pengguna yang menulis `using = <<geomplus.xp>>` tanpa instalasi
-eksplisit pun tetap dilayani — resolver menarik otomatis (tingkat 4).
+Once **merged**, `xpc search geomplus` and `xpc info geomplus` will find it in
+the registry, and `xpc install geomplus` pulls it straight from
+`X-Ples/Liblary`. Users who write `using = <<geomplus.xp>>` without an explicit
+install are served too — the resolver fetches it automatically (level 4).
 
-### Konvensi library di X-Ples/Liblary
+### Library conventions in X-Ples/Liblary
 
-| Konvensi | Alasan |
-|----------|--------|
-| Nama library `lowercase`, unik | Konsisten dengan namespace `nama::fungsi` |
-| Header komentar: nama + versi + "Namespace implisit:" | Memudahkan pembaca sumber |
-| `pub fn` untuk API, helper tanpa `pub` | API jelas vs internal |
-| Satu folder per library, path di `registry.toml` | Auto-fetch GitHub raw bekerja per-file |
-| Entri `[packages.<nama>]` lengkap (version/author/path/size_kb/date/description) | Konsisten dengan registry yang ada |
-| Sertakan `contoh.xp` yang bisa dijalankan | PR terverifikasi |
-| Jangan mengubah file milik kontributor lain | PR fokus dan cepat direview |
-| Pembaruan versi = PR baru dengan `version` naik | Riwayat perubahan jelas |
+| Convention | Reason |
+|------------|--------|
+| `lowercase`, unique library name | Consistent with the `name::function` namespace |
+| Header comment: name + version + "Implicit namespace:" | Makes the source easy to read |
+| `pub fn` for the API, helpers without `pub` | Clear API vs. internals |
+| One folder per library, path in `registry.toml` | GitHub raw auto-fetch works per file |
+| Complete `[packages.<name>]` entry (version/author/path/size_kb/date/description) | Consistent with the existing registry |
+| Include a runnable `example.xp` | Verified PRs |
+| Do not modify other contributors' files | Focused PRs that are reviewed quickly |
+| A version update = a new PR with a bumped `version` | Clear change history |
 
 ---
 
-## 23. Pengujian
+## 23. Testing
 
-Proyek X+ punya rangkaian uji mandiri — 20 tes:
+The X+ project has a standalone test suite — 20 tests. It lives in the source
+repository and is intended for **contributors** modifying the toolchain:
 
 ```bash
 python3 tests/run_tests.py
 ```
 
-Output yang sehat:
+A healthy output:
 
 ```
 ....................
 20/20 tests passed
 ```
 
-Cakupannya: lexer, parser (kedua mode sintaks), type checking (termasuk
-`E204` shape checking), CTFE, eksekusi XVM, paket `.xbc`, dan fitur keamanan
-(Result/`?`/null-safety). Jika Anda memodifikasi toolchain, jalankan ini sebelum
-commit. Audit tambahan per file: `xpc mem-check`, `xpc bounds-check`, `xpc lint`.
+Coverage: lexer, parser (both syntax modes), type checking (including `E204`
+shape checking), CTFE, XVM execution, `.xbc` packaging, and safety features
+(Result/`?`/null-safety). If you modify the toolchain, run this before
+committing. Additional per-file audits available from the binary:
+`xpc mem-check`, `xpc bounds-check`, `xpc lint`.
 
 ---
 
-## 24. Struktur Proyek
+## 24. Project Structure
+
+This is the layout of the **source repository** (end users only need the
+prebuilt `xpc` binary from the release page):
 
 ```
 X+/
-├── xplus/              # paket Python toolchain
+├── xplus/              # toolchain source package
 │   ├── __init__.py
-│   ├── tokens.py       # definisi token
-│   ├── lexer.py        # tokenizer + posisi visual
-│   ├── astnodes.py     # node AST
-│   ├── parser.py       # parser rekursif-turun (dual-syntax)
-│   ├── typesys.py      # inferensi tipe + shape checking tensor
-│   ├── xir.py          # XIR (SSA) + kontainer .xbc (XBC1)
+│   ├── tokens.py       # token definitions
+│   ├── lexer.py        # tokenizer + visual positions
+│   ├── astnodes.py     # AST nodes
+│   ├── parser.py       # recursive-descent parser (dual-syntax)
+│   ├── typesys.py      # type inference + tensor shape checking
+│   ├── xir.py          # XIR (SSA) + .xbc container (XBC1)
 │   ├── vm.py           # XVM: checked arith, arena, MMIO/GPIO, @grad
-│   ├── compiler.py     # orkestrasi pipeline penuh
-│   ├── resolver.py     # resolusi library 4 tingkat + lockfile
+│   ├── compiler.py     # full pipeline orchestration
+│   ├── resolver.py     # 4-level library resolution + lockfile
 │   ├── builtins.py     # native intrinsics (sum, length, push, ...)
-│   ├── errors.py       # error berkode E1xx/E2xx/E3xx + render visual
-│   ├── cli.py          # 40 subperintah xpc
-│   └── repl.py         # REPL interaktif (JIT di RAM)
-├── libs/               # standard library (ditulis dalam X+)
+│   ├── errors.py       # coded errors E1xx/E2xx/E3xx + visual rendering
+│   ├── cli.py          # the 40 xpc subcommands
+│   └── repl.py         # interactive REPL (JIT in RAM)
+├── libs/               # standard library (written in X+)
 │   ├── math.xp  strng.xp  string.xp  time.xp
 │   ├── statistics.xp  gpio.xp  task.xp
-│   └── registry.toml   # peta registry pusat X-Ples/Liblary
-├── examples/           # 20 contoh program
+│   └── registry.toml   # central X-Ples/Liblary registry map
+├── examples/           # 20 example programs
 │   ├── hello.xp  matmul.xp  guard_result.xp  comptime.xp
 │   ├── smv_demo.xp  arena_demo.xp  pipeline.xp  rational_demo.xp
 │   ├── iot_led.xp  interrupt_demo.xp  library_user.xp  ...
 ├── tests/
-│   └── run_tests.py    # 20 tes mandiri
-├── xpc                 # launcher CLI
-├── install.sh          # installer (layout-adaptive + Termux)
-├── SPECS.md            # spesifikasi formal: EBNF, XIR, XBC, SMV, keputusan LOCKED
-└── README.md           # dokumen ini
+│   └── run_tests.py    # 20 standalone tests
+├── xpc                 # CLI launcher
+├── SPECS.md            # formal spec: EBNF, XIR, XBC, SMV, LOCKED decisions
+└── README.md           # this document
 ```
+
+Prebuilt binaries of the toolchain are published at
+<https://github.com/X-Ples/xpc/releases/tag/xpc>.
 
 ---
 
-## 25. Kegunaan Nyata
+## 25. Real-World Uses
 
-| Skenario | Kenapa X+ cocok |
-|----------|-----------------|
-| **Belajar compiler & VM** | Pipeline lengkap tapi terbaca: lexer → AST → typesys → XIR (SSA) → XBC; `xpc ast/ir/asm/disasm` membuka setiap tahap |
-| **Matematika & aljabar linear kecil** | `vecN`/`mat[R,C]` primitif, `x` matmul dengan jaminan bentuk, `rational` eksak, `@grad` autodiff, pipeline `|>` |
-| **Lab embedded virtual** | `register` MMIO type-safe, `asm!`, `@interrupt(vector::...)`, `xpc simulate --board=esp32` — tanpa hardware, tanpa pointer cast |
-| **Pengajaran keamanan tipe** | `Result<T,E>`, `T?`, `guard`, `?`, `match` — "jika kompilasi lolos, kelas error ini sudah tertangani" |
-| **Scripting di perangkat lemah/offline** | 100% Python, tanpa dependensi; Termux/Android dan mesin tua; resolver offline-first + lockfile |
-| **Tuning performa** | `xpc vectorize`, `sim-profile`, `cache-fit`, `bench` ns-level, SMV telemetri (`@simd_width`, `@arena_peak`) |
-| **Komputasi deterministik** | Integer checked + `rational` menghapus kejutan floating-point |
+| Scenario | Why X+ fits |
+|----------|-------------|
+| **Learning compilers & VMs** | A complete but readable pipeline: lexer → AST → typesys → XIR (SSA) → XBC; `xpc ast/ir/asm/disasm` open up every stage |
+| **Small-scale math & linear algebra** | `vecN`/`mat[R,C]` primitives, `x` matmul with shape guarantees, exact `rational`, `@grad` autodiff, `\|>` pipelines |
+| **Virtual embedded lab** | Type-safe `register` MMIO, `asm!`, `@interrupt(vector::...)`, `xpc simulate --board=esp32` — no hardware, no pointer casts |
+| **Teaching type safety** | `Result<T,E>`, `T?`, `guard`, `?`, `match` — "if it compiles, this class of error is already handled" |
+| **Scripting on weak/offline devices** | A single self-contained binary; Termux/Android and older machines; offline-first resolver + lockfile |
+| **Performance tuning** | `xpc vectorize`, `sim-profile`, `cache-fit`, ns-level `bench`, SMV telemetry (`@simd_width`, `@arena_peak`) |
+| **Deterministic computation** | Checked integers + `rational` remove floating-point surprises |
 
 ---
 
 ## 26. Troubleshooting & FAQ
 
-### `ModuleNotFoundError: No module named 'xplus'`
+### `xpc: command not found`
 
-Tata letak folder tidak sesuai: file `.py` paket berada **flat di root** (atau
-folder di-rename, mis. `~/X+`). Installer lama mengasumsikan folder proyek
-berisi subfolder `xplus/`. **Solusi:** jalankan `install.sh` terbaru — ia
-merapikan layout otomatis. Perbaikan manual:
+The binary is not on your `PATH`. Move it into a folder that is on your `PATH`
+(for example `~/.local/bin` on Linux/macOS, or `$PREFIX/bin` on Termux), or call
+it with its full path (`./xpc version`). On Windows, add the folder containing
+`xpc.exe` to your `PATH` environment variable and reopen the terminal.
 
-```bash
-cd ~/X+ && mkdir -p xplus && \
-for f in __init__.py astnodes.py builtins.py cli.py compiler.py errors.py \
-         lexer.py parser.py repl.py resolver.py tokens.py typesys.py \
-         vm.py xir.py; do mv "$f" xplus/; done && \
-PYTHONPATH="$HOME/X+" python3 -c "import xplus.compiler, xplus.cli; print('OK')"
-```
+### `Permission denied` when running `./xpc`
 
-(`xpc.py` sengaja tetap di root — ia adalah launcher yang menambahkan root
-proyek ke `sys.path` sebelum memanggil `xplus.cli`.)
-
-### Termux: `chmod: cannot access '.../xpc'`
-
-Salinan proyek Anda tidak memiliki file launcher `xpc` (hanya `xpc.py`).
-Installer terbaru membuat launcher-nya secara otomatis dan memasangnya ke
-`$PREFIX/bin/xpc` (sudah di PATH Termux). Tanpa installer:
+The downloaded file is not marked executable:
 
 ```bash
-python3 xpc.py version    # jalankan lewat xpc.py
+chmod +x xpc
 ```
 
-### Peringatan `stdlib missing` saat install
+### The downloaded binary does not run on my machine
 
-Folder `libs/` tidak ada di salinan proyek. Solusi: unduh ulang proyek lengkap,
-atau letakkan `libs/*.xp` di root proyek / `~/.xpc/libs/`. Selama stdlib belum
-ada, seluruh fitur bahasa tetap berjalan — hanya `using = <<...>>` ke stdlib
-yang belum bisa.
+Make sure you downloaded the asset that matches your operating system **and**
+CPU architecture (for example, ARM64 devices such as Raspberry Pi or most
+Android phones need an ARM64 build, not x86-64). All assets are listed at
+<https://github.com/X-Ples/xpc/releases/tag/xpc>. Run `xpc doctor` once it
+starts for a health diagnosis.
 
-### Kompilasi gagal dengan E220
+### `stdlib missing` warning
 
-Ekspresi `comptime` Anda melebihi 1.000.000 langkah. Sederhanakan ekspresi atau
-pecah menjadi beberapa `const`.
+The standard library could not be found. It is normally bundled with the
+toolchain; if you are working from a source checkout, make sure the `libs/`
+folder exists in the project root or in `~/.xpc/libs/`. While the stdlib is
+absent, all language features still work — only `using = <<...>>` imports of
+stdlib modules cannot be resolved.
+
+### Compilation fails with E220
+
+Your `comptime` expression exceeded 1,000,000 steps. Simplify the expression or
+split it into several `const`s.
 
 ### `E120: unknown SMV`
 
-Nama SMV tidak terdaftar. Periksa ejaan (compiler memberi saran nama terdekat)
-dan lihat tabel SMV di bagian 14 / SPECS.md §5.
+The SMV name is not registered. Check the spelling (the compiler gives a
+nearest-name suggestion) and see the SMV table in Section 14 / SPECS.md §5.
 
-### Berapa versi Python minimal?
+### How do I update X+?
 
-Python 3.8+ (disarankan 3.10+, teruji hingga 3.14). Tidak ada dependensi
-pihak ketiga.
+Run `xpc self-update`, or download the latest binary from the
+[release page](https://github.com/X-Ples/xpc/releases/tag/xpc) and replace the
+old one.
 
-### Apakah X+ butuh internet?
+### Does X+ need the internet?
 
-Tidak. Internet hanya diperlukan sekali untuk menarik library publik yang belum
-ter-cache. Stdlib bundled dan library lokal bekerja penuh offline; `--no-cache`
-memaksa unduh ulang bila diperlukan.
+No. The internet is only needed once to pull public libraries that are not yet
+cached (and to download the binary itself). The bundled stdlib and local
+libraries work fully offline; `--no-cache` forces a re-download when needed.
 
 ---
 
 ## 27. Roadmap v0.5
 
-Sesuai SPECS.md §8:
+Per SPECS.md §8:
 
 1. **Lower XIR → Cranelift IR** (dev loop) **& LLVM IR** (release, `-O3` + LTO).
-2. **Auto-vectorize nyata**: loop → SIMD intrinsics per target (AVX-512/NEON/RVV).
+2. **Real auto-vectorization**: loops → SIMD intrinsics per target (AVX-512/NEON/RVV).
 3. **Cross-compilation**: `xpc export main.xp --target=linux-aarch64`.
 4. **Bare-metal flash**: `xpc flash main.xp --target=esp32 --port=/dev/ttyUSB0`.
 5. **`export "C"` ABI** + FFI header parsing.
-6. **Traits + monomorphization**; **coroutine** (`yield` kembali sebagai generator).
-7. **Threads nyata** untuk `parfor` / `task::spawn` (thread-local arena).
-8. **Registry live GitHub** X-Ples/Liblary dengan commit-hash pinning.
+6. **Traits + monomorphization**; **coroutines** (`yield` returns as a generator).
+7. **Real threads** for `parfor` / `task::spawn` (thread-local arena).
+8. **Live GitHub registry** X-Ples/Liblary with commit-hash pinning.
 
 ---
 
-## 28. Ekosistem & Kontribusi
+## 28. Ecosystem & Contributing
 
-- **Repositori library publik:** [`github.com/X-Ples/Liblary`](https://github.com/X-Ples/Liblary)
-  — cukup *fork* + *PR* (panduan lengkap di bagian 22).
-- **Spesifikasi formal:** `SPECS.md` di root proyek — EBNF, set instruksi XIR,
-  format XBC1, keputusan desain LOCKED, dan tabel SMV.
-- **Melaporkan bug / mengusulkan fitur:** buka *issue* dengan potongan `.xp`
-  minimal yang memicu masalah + output `xpc doctor`.
-- **Menyumbang contoh:** `examples/` selalu terbuka — satu contoh yang
-  mengajarkan satu ide lebih berharga daripada program besar yang tak terbaca.
+- **Toolchain binaries:**
+  [`github.com/X-Ples/xpc/releases/tag/xpc`](https://github.com/X-Ples/xpc/releases/tag/xpc)
+  — download the prebuilt `xpc` for your platform.
+- **Public library repository:**
+  [`github.com/X-Ples/Liblary`](https://github.com/X-Ples/Liblary) — just
+  *fork* + *PR* (full guide in Section 22).
+- **Formal specification:** `SPECS.md` at the project root — EBNF, XIR
+  instruction set, XBC1 format, LOCKED design decisions, and the SMV table.
+- **Reporting bugs / proposing features:** open an *issue* with a minimal `.xp`
+  snippet that triggers the problem + the output of `xpc doctor`.
+- **Contributing examples:** `examples/` is always open — one example that
+  teaches one idea is worth more than a large unreadable program.
 
-Selamat mencoba — mulai dari `xpc repl`, lalu telusuri `examples/` dari
-`hello.xp` sampai `interrupt_demo.xp`: dari `show(sys::out, ...)` sampai
-MMIO dan autodiff, semuanya sudah menunggu di tangan Anda.
-
-
+Happy hacking — start with `xpc repl`, then explore `examples/` from `hello.xp`
+all the way to `interrupt_demo.xp`: from `show(sys::out, ...)` to MMIO and
+autodiff, everything is waiting at your fingertips.
