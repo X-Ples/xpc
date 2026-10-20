@@ -129,11 +129,11 @@ language.
 
 X+ is distributed as **prebuilt binaries**. All releases are published at:
 
-**<https://github.com/X-Ples/xpc/releases/tag/xpc>**
+**<https://github.com/X-Ples/xpc/releases/tag/x%2B>**
 
 ### 3.1 Download the binary
 
-1. Open the [release page](https://github.com/X-Ples/xpc/releases/tag/xpc).
+1. Open the [release page](https://github.com/X-Ples/xpc/releases/tag/X%2B).
 2. Under **Assets**, download the binary that matches your operating system and
    CPU architecture.
 3. Rename it to `xpc` (or `xpc.exe` on Windows) if needed.
