@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+# xpc — X+ toolchain launcher
+import os
+import sys
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_BAKED_ROOT = r"""/data/data/com.termux/files/home/X+"""
+
+for _p in (_HERE, _BAKED_ROOT):
+    if _p and os.path.isfile(os.path.join(_p, "xplus", "__init__.py")):
+        if _p not in sys.path:
+            sys.path.insert(0, _p)
+        break
+else:
+    print("xpc: xplus/__init__.py not found (looked in %s and %s)" % (_HERE, _BAKED_ROOT), file=sys.stderr)
+    print("     re-run install.sh inside the X+ project folder", file=sys.stderr)
+    sys.exit(70)
+
+
+def _main():
+    import importlib
+    import traceback
+
+    candidates = (
+        ("xplus.cli", "main"),
+        ("xplus.cli", "cli"),
+        ("xplus.cli", "main_cli"),
+    )
+    missing = []
+    for modname, attr in candidates:
+        try:
+            mod = importlib.import_module(modname)
+        except ModuleNotFoundError as e:
+            if e.name and e.name.startswith("xplus"):
+                missing.append(modname)
+                continue
+            print("xpc: error while importing %s:" % modname, file=sys.stderr)
+            traceback.print_exc()
+            return 70
+        except Exception:
+            print("xpc: error while importing %s:" % modname, file=sys.stderr)
+            traceback.print_exc()
+            return 70
+        fn = getattr(mod, attr, None)
+        if callable(fn):
+            return fn()
+    print("xpc: could not locate a CLI entry point (tried: %s)" % ", ".join(missing), file=sys.stderr)
+    print("     re-run install.sh inside the X+ project folder", file=sys.stderr)
+    return 70
+
+
+if __name__ == "__main__":
+    sys.exit(_main())

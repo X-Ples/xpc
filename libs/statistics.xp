@@ -1,0 +1,40 @@
+pub fn mean(data) -> f64 {
+    total := sum(data);
+    n := length(data);
+    guard n > 0 else { yield 0.0; }
+    yield total / n;
+}
+
+pub fn variance(data) -> f64 {
+    m := mean(data);
+    acc := 0.0;
+    for x in data {
+        d := x - m;
+        acc = acc + d * d;
+    }
+    yield acc / length(data);
+}
+
+pub fn std(data) -> f64 {
+    yield sqrt(variance(data));
+}
+
+pub fn max(data) -> f64 {
+    largest := data[0];
+    for x in data {
+        guard x <= largest else { largest = x; };
+    }
+    yield largest;
+}
+
+pub fn min(data) -> f64 {
+    smallest := data[0];
+    for x in data {
+        guard x >= smallest else { smallest = x; };
+    }
+    yield smallest;
+}
+
+pub fn sum(data) -> f64 {
+    yield sum(data);
+}

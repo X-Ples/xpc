@@ -1,0 +1,7 @@
+pub fn spawn(fnref, stack_size: int32, core: int32) {
+    __task_spawn(fnref, stack_size, core);
+}
+
+pub fn sleep(ms: int32) {
+    __delay_ms(ms);
+}

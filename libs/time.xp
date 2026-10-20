@@ -1,0 +1,15 @@
+pub fn delay_ms(ms: int32) {
+    __delay_ms(ms);
+}
+
+pub fn delay_us(us: int32) {
+    __delay_ms(us / 1000);
+}
+
+pub fn now_ms() -> int64 {
+    yield time_ns() / 1000000;
+}
+
+pub fn now_s() -> f64 {
+    yield time_ns() as f64 / 1000000000.0;
+}

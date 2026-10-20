@@ -1,0 +1,11 @@
+VERSION = "1.0.0"
+LANG_NAME = "X+"
+BYTECODE_EXT = ".xbc"
+SOURCE_EXT = ".xp"
+MAGIC = b"XBC1"
+FORMAT_VERSION = 1
+CTFE_STEP_LIMIT = 1_000_000
+DEFAULT_OPT_LEVEL = 3
+BUILD_PROFILE = "release"
+TARGET_ARCH_DEFAULT = "native"
+REGISTRY_BASE = "https://raw.githubusercontent.com/X-Ples/Liblary/main/"

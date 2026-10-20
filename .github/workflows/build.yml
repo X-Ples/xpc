@@ -1,0 +1,54 @@
+name: Build XPC Binaries
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install nuitka
+
+      - name: Build for Linux (x86_64)
+        if: runner.os == 'Linux'
+        run: |
+          nuitka --onefile --output-filename=xpc-linux-x86_64 xpc.py
+
+      - name: Build for Windows (amd64)
+        if: runner.os == 'Windows'
+        run: |
+          nuitka --onefile --output-filename=xpc-windows-amd64.exe xpc.py
+
+      - name: Build for macOS (Apple Silicon / Intel)
+        if: runner.os == 'macOS'
+        run: |
+          nuitka --onefile --output-filename=xpc-macos xpc.py
+
+      - name: Upload Compiled Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: xpc-binaries-${{ runner.os }}
+          path: |
+            xpc-linux-x86_64
+            xpc-windows-amd64.exe
+            xpc-macos
