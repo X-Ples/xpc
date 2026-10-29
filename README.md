@@ -7,10 +7,17 @@ absolute null-safety, arena memory, autodiff, and a hardware world
 (MMIO/asm/interrupts) inside the VM — shipped as a ready-to-run binary,
 available on Linux, macOS, Windows, and Android/Termux.**
 
-`xpc toolchain` · `language v0.1 (locked mode)` · `bytecode: .xbc (XBC1)` ·
+`xpc toolchain 1.1.0` · `language v0.1 (locked mode)` · `bytecode: .xbc (XBC1)` ·
 `ecosystem: X-Ples/Liblary`
 
 </div>
+
+> **New in 1.1.0:** a faster Zig-based compiler (`xzc`), a Rust-core VM (`xpv`),
+> tiny `.xbc` artifacts, and a tiny memory footprint. See
+> [What's New in 1.1.0](#29-whats-new-in-110),
+> [Performance & Benchmarks](#30-performance--benchmarks-110) and
+> [Important Tips](#31-important-tips).
+> Download: <https://github.com/X-Ples/xpc/releases/tag/binary>
 
 ---
 
@@ -44,6 +51,9 @@ available on Linux, macOS, Windows, and Android/Termux.**
 26. [Troubleshooting & FAQ](#26-troubleshooting--faq)
 27. [Roadmap v0.5](#27-roadmap-v05)
 28. [Ecosystem & Contributing](#28-ecosystem--contributing)
+29. [What's New in 1.1.0](#29-whats-new-in-110)
+30. [Performance & Benchmarks (1.1.0)](#30-performance--benchmarks-110)
+31. [Important Tips](#31-important-tips)
 
 ---
 
@@ -54,7 +64,7 @@ code is turned into **XIR** (*X+ Intermediate Representation*, SSA-flavored),
 packaged as **`.xbc` bytecode**, and executed by the **XVM** (*X+ Virtual
 Machine*). The toolchain is distributed as a **prebuilt, self-contained binary**
 (`xpc`) — download it from the
-[GitHub release page](https://github.com/X-Ples/xpc/releases/tag/X%2B), put it
+[GitHub release page](https://github.com/X-Ples/xpc/releases/tag/binary), put it
 on your `PATH`, and you are done. No language runtime or package manager is
 required, so X+ runs on laptops, servers, Raspberry Pi boards, and even Android
 phones through Termux.
@@ -118,6 +128,7 @@ document uses locked mode.
 | 17 | **Single prebuilt binary** | Download and run — nothing to build or install; Linux/macOS/Windows/Termux |
 | 18 | **40-subcommand CLI** | run/check/lint/ast/ir/disasm/build/bench/fmt/watch/install/audit/simulate/dll |
 | 19 | **Open ecosystem** | Central public libraries at `X-Ples/Liblary`; just fork + PR |
+| 20 | **Fast compile & tiny output (1.1.0)** | ~41x faster than `g++` on a 1000-line module; an 83-byte `.xbc` for hello world — see [Section 30](#30-performance--benchmarks-110) |
 
 In short: X+ combines Rust-style *type safety*, Python-style scripting
 convenience, and an embedded-style hardware lab — in one small, consistent
@@ -129,11 +140,11 @@ language.
 
 X+ is distributed as **prebuilt binaries**. All releases are published at:
 
-**<https://github.com/X-Ples/xpc/releases/tag/x%2B>**
+**<https://github.com/X-Ples/xpc/releases/tag/binary>**
 
 ### 3.1 Download the binary
 
-1. Open the [release page](https://github.com/X-Ples/xpc/releases/tag/X%2B).
+1. Open the [release page](https://github.com/X-Ples/xpc/releases/tag/binary).
 2. Under **Assets**, download the binary that matches your operating system and
    CPU architecture.
 3. Rename it to `xpc` (or `xpc.exe` on Windows) if needed.
@@ -161,7 +172,7 @@ your `PATH` environment variable.
 ### 3.3 Verify
 
 ```bash
-xpc version                 # CLI + compiler + target versions
+xpc version                 # CLI + compiler + target versions (expect 1.1.0)
 xpc doctor                  # toolchain health diagnosis
 xpc cpu-info                # detect AVX-512 / NEON / FMA3
 xpc run examples/hello.xp   # run your first example
@@ -184,7 +195,8 @@ xpc run examples/hello.xp   # run your first example
 xpc self-update             # update xpc itself
 ```
 
-You can always re-download the latest binary from the release page as well.
+You can always re-download the latest binary (1.1.0) from the
+[release page](https://github.com/X-Ples/xpc/releases/tag/binary) as well.
 
 ---
 
@@ -340,7 +352,7 @@ per-slot type annotations:
 };
 ```
 
-The v0.1 parser accepts both styles, but **locked is the official mode** for new code.
+The parser accepts both styles, but **locked is the official mode** for new code.
 
 ---
 
@@ -878,6 +890,10 @@ offset  size  field
 A `.xbc` file can be executed directly: `xpc app.xbc` (a `.xbc` file argument is
 automatically forwarded to `run --no-artifact` mode).
 
+> **1.1.0:** in the `xzc` / `xpv` pair, a `.xbc` module stores only constants,
+> native names, opcode streams and a CRC32 trailer. A hello-world module is
+> just **83 bytes** — see [Section 30](#30-performance--benchmarks-110).
+
 ---
 
 ## 18. CLI Reference: xpc (40 Subcommands)
@@ -1321,13 +1337,14 @@ X+/
 │   ├── iot_led.xp  interrupt_demo.xp  library_user.xp  ...
 ├── tests/
 │   └── run_tests.py    # 20 standalone tests
+├── bench/suite/        # benchmark collector (collect.sh) — new in 1.1.0
 ├── xpc                 # CLI launcher
 ├── SPECS.md            # formal spec: EBNF, XIR, XBC, SMV, LOCKED decisions
 └── README.md           # this document
 ```
 
 Prebuilt binaries of the toolchain are published at
-<https://github.com/X-Ples/xpc/releases/tag/xpc>.
+<https://github.com/X-Ples/xpc/releases/tag/binary>.
 
 ---
 
@@ -1339,9 +1356,10 @@ Prebuilt binaries of the toolchain are published at
 | **Small-scale math & linear algebra** | `vecN`/`mat[R,C]` primitives, `x` matmul with shape guarantees, exact `rational`, `@grad` autodiff, `\|>` pipelines |
 | **Virtual embedded lab** | Type-safe `register` MMIO, `asm!`, `@interrupt(vector::...)`, `xpc simulate --board=esp32` — no hardware, no pointer casts |
 | **Teaching type safety** | `Result<T,E>`, `T?`, `guard`, `?`, `match` — "if it compiles, this class of error is already handled" |
-| **Scripting on weak/offline devices** | A single self-contained binary; Termux/Android and older machines; offline-first resolver + lockfile |
+| **Scripting on weak/offline devices** | A single self-contained binary; Termux/Android and older machines; offline-first resolver + lockfile; ~1.3 MB compiler peak RAM in 1.1.0 |
 | **Performance tuning** | `xpc vectorize`, `sim-profile`, `cache-fit`, ns-level `bench`, SMV telemetry (`@simd_width`, `@arena_peak`) |
 | **Deterministic computation** | Checked integers + `rational` remove floating-point surprises |
+| **Fast edit-compile loops** | A 1000-line module compiles in ~5 ms with `xzc` — ideal for `xpc watch` |
 
 ---
 
@@ -1367,7 +1385,7 @@ chmod +x xpc
 Make sure you downloaded the asset that matches your operating system **and**
 CPU architecture (for example, ARM64 devices such as Raspberry Pi or most
 Android phones need an ARM64 build, not x86-64). All assets are listed at
-<https://github.com/X-Ples/xpc/releases/tag/xpc>. Run `xpc doctor` once it
+<https://github.com/X-Ples/xpc/releases/tag/binary>. Run `xpc doctor` once it
 starts for a health diagnosis.
 
 ### `stdlib missing` warning
@@ -1388,10 +1406,20 @@ split it into several `const`s.
 The SMV name is not registered. Check the spelling (the compiler gives a
 nearest-name suggestion) and see the SMV table in Section 14 / SPECS.md §5.
 
+### `xpc version` still shows an older version after updating
+
+Another `xpc` earlier on your `PATH` is shadowing the new one. Run
+`which xpc` (or `where xpc` on Windows) and remove or replace the old copy.
+
+### My X+ program is slower than the C++ version
+
+Expected on some workloads — see [Section 30](#30-performance--benchmarks-110)
+for honest numbers and [Section 31](#31-important-tips) for how to speed things up.
+
 ### How do I update X+?
 
 Run `xpc self-update`, or download the latest binary from the
-[release page](https://github.com/X-Ples/xpc/releases/tag/xpc) and replace the
+[release page](https://github.com/X-Ples/xpc/releases/tag/binary) and replace the
 old one.
 
 ### Does X+ need the internet?
@@ -1414,13 +1442,15 @@ Per SPECS.md §8:
 6. **Traits + monomorphization**; **coroutines** (`yield` returns as a generator).
 7. **Real threads** for `parfor` / `task::spawn` (thread-local arena).
 8. **Live GitHub registry** X-Ples/Liblary with commit-hash pinning.
+9. **VM hot paths** (informed by 1.1.0 benchmarks): faster string handling and
+   graph/collection workloads in `xpv`.
 
 ---
 
 ## 28. Ecosystem & Contributing
 
-- **Toolchain binaries:**
-  [`github.com/X-Ples/xpc/releases/tag/xpc`](https://github.com/X-Ples/xpc/releases/tag/xpc)
+- **Toolchain binaries (1.1.0):**
+  [`github.com/X-Ples/xpc/releases/tag/binary`](https://github.com/X-Ples/xpc/releases/tag/binary)
   — download the prebuilt `xpc` for your platform.
 - **Public library repository:**
   [`github.com/X-Ples/Liblary`](https://github.com/X-Ples/Liblary) — just
@@ -1431,6 +1461,179 @@ Per SPECS.md §8:
   snippet that triggers the problem + the output of `xpc doctor`.
 - **Contributing examples:** `examples/` is always open — one example that
   teaches one idea is worth more than a large unreadable program.
+
+---
+
+## 29. What's New in 1.1.0
+
+Version **1.1.0** is a toolchain release: the language itself stays at
+**v0.1 (locked mode)**, so existing `.xp` programs keep working unchanged.
+
+| Component | Version | Role |
+|-----------|---------|------|
+| `xpc` | 1.1.0 | The single CLI entry point (40 subcommands) |
+| `xzc` | 1.1.0 | The compiler, written in **Zig** — `.xp` → `.xbc` |
+| `xpv` | 1.1.0 | The VM, with a **Rust core** (`xplus-core 1.1.0`) — runs `.xbc` |
+
+### Highlights
+
+1. **Much faster compilation.** On a generated 1000-line module, `xzc`
+   compiles in a mean of **5.38 ms** versus **221.63 ms** for `g++` — about
+   **41x faster**.
+2. **Tiny bytecode.** A hello-world `.xbc` is only **83 bytes**; the `bfs`
+   workload is 5,630 bytes and `cache` is 4,623 bytes. The equivalent stripped
+   native ELF for hello is 14,472 bytes (~174x larger).
+3. **Very small memory footprint.** The `xzc` compiler peaks at about
+   **1.3 MB** RSS (g++ peaks at ~24.7 MB for the same job); the VM running
+   hello peaks at about **2.9 MB**.
+4. **Near-parity on memory- and native-call-heavy work.** The `mem` and
+   `cache` pair workloads run within roughly 2%–10% of native C++.
+5. **Verifiable results.** Every benchmark workload prints checksums and self
+   checks, so a wrong compile or wrong VM result cannot silently distort the
+   numbers.
+6. **Reproducible benchmark suite.** `bench/suite/collect.sh` regenerates the
+   whole report (warmups excluded, mean/min/median/stddev reported).
+7. **One download.** All 1.1.0 binaries live at a single release page:
+   <https://github.com/X-Ples/xpc/releases/tag/binary>.
+
+### Upgrade checklist
+
+```bash
+xpc self-update          # or re-download from the release page
+xpc version              # should report 1.1.0
+xpc doctor               # health check
+xpc check main.xp        # re-validate your existing programs
+```
+
+---
+
+## 30. Performance & Benchmarks (1.1.0)
+
+All numbers below were measured on **Linux x86_64 (Intel Xeon)**, with 3 warmup
+runs excluded and 15 measured runs per side (20 for the startup table). The
+C++ side is a single `g++ -O2` binary; the X+ side is one `xzc` compile
+followed by repeated `xpv` runs, so X+ per-run cost **includes VM startup and
+module load**. Your hardware will give different absolute numbers.
+
+### 30.1 Compile speed (generated 1000-line module)
+
+| Tool | Mean | Min | Median | Std Dev |
+|------|-----:|----:|-------:|--------:|
+| `xzc` | 5.38 ms | 4.70 ms | 5.13 ms | 0.55 ms |
+| `g++` | 221.63 ms | 214.19 ms | 220.89 ms | 6.30 ms |
+
+Ratio: `g++` takes **41.2x** longer. Both sides produced agreeing outputs.
+
+### 30.2 Peak memory (VmHWM)
+
+| Workload | Peak RSS |
+|----------|---------:|
+| `xzc` compile | 1,344 KB |
+| `xpv` hello | 2,944 KB |
+| `xpv` bfs | 6,920 KB |
+| `xpv` cache | 19,612 KB |
+| `g++` compile | 25,268 KB |
+
+### 30.3 Artifact sizes
+
+| Artifact | Bytes |
+|----------|------:|
+| `.xbc` hello | 83 |
+| `.xbc` bfs | 5,630 |
+| `.xbc` cache | 4,623 |
+| ELF hello (stripped) | 14,472 |
+| ELF arith (stripped) | 14,472 |
+| ELF sort (stripped) | 14,608 |
+
+### 30.4 Run-time ratios vs native C++ (pair suite)
+
+| Scenario | C++ mean | X+ mean | Ratio |
+|----------|---------:|--------:|------:|
+| `mem` | 63.41 ms | 64.54 ms | **1.02x** |
+| `cache` | 33.00 ms | 36.28 ms | **1.10x** |
+| `io` | 42.58 ms | 84.07 ms | 1.97x |
+| `str` | 204.18 ms | 1757.81 ms | 8.61x |
+| `bfs` | 26.62 ms | 376.90 ms | 14.16x |
+
+**How to read this honestly:** X+ is at parity where work is dominated by
+memory access or native calls into the Rust core (`mem`, `cache`), moderately
+slower on I/O, and noticeably slower on pure interpreted compute such as graph
+traversal (`bfs`) and string-heavy loops (`str`). Choose X+ for fast iteration,
+safety, small artifacts and low memory — not (yet) for hot pure-compute inner
+loops. The v0.5 roadmap (Cranelift/LLVM lowering) targets this gap.
+
+### 30.5 Short-program startup (fallback timer, 20 runs)
+
+| Program | C++ | `xpc` | `xplus` |
+|---------|----:|------:|--------:|
+| hello | 1.28 ms | 4.45 ms | 1.70 ms |
+| arith | 2.06 ms | 9.71 ms | 6.68 ms |
+
+> The startup table uses a date-based fallback timer, so treat sub-5 ms
+> numbers as indicative rather than exact. The very short-lived `hello`
+> memory sample is also the most exposed to polling races (it is retried up to
+> five times until a nonzero sample lands).
+
+---
+
+## 31. Important Tips
+
+### Getting started
+- **Always start with `xpc check`.** It validates syntax and types instantly
+  with no execution — perfect as an editor-save hook or CI step.
+- **Pair `xpc watch` with 1.1.0's fast compiler** for a near-instant
+  edit → compile → run loop.
+- **Run `xpc doctor` first** whenever something feels off, and attach its
+  output to any bug report.
+- **Verify the version** with `xpc version` after every update; a stale binary
+  earlier on your `PATH` is the most common cause of "it still says old version".
+
+### Writing safer code
+- **Prefer `Result<T,E>` + `?`** over sentinel values, and `T?` over "magic"
+  defaults; the compiler then forces every caller to handle the failure case.
+- **Use `guard` for preconditions** at the top of functions to keep the happy
+  path flat and readable.
+- **Keep checked integers on.** Reach for `+% -% *%` only when wraparound is
+  truly the intent (hashes, checksums).
+- **Use `rational` for exact math** (money-like or ratio logic) instead of
+  hoping `f64` rounding stays small.
+- **Remember the spacing rule:** `a .x b` is a dot product, `a.x` is field
+  access. `A x B` is matmul; scalar scaling is always `*`.
+
+### Performance & memory
+- **Move constants to `comptime`.** Tables (sin, factorials) are computed by the
+  compiler — 0 ms at runtime. Keep them under the 1,000,000-step limit (`E220`).
+- **Use `arena { ... }` for batch work** so memory is released all at once.
+  Check `@arena_peak` and run `xpc mem-check` to audit leaks.
+- **Lean on native intrinsics and stdlib functions** (`sqrt`, `sum`, `math::`,
+  `statistics::`) for hot paths — workloads dominated by native calls run at
+  near C++ speed in 1.1.0, while long hand-written interpreted loops are the
+  slowest shape.
+- **Profile before optimizing:** `xpc time` (compile vs. run), `xpc bench
+  --runs N`, `xpc vectorize`, `xpc sim-profile`, and `xpc cache-fit`.
+- **Benchmark fairly:** include warmups, report mean *and* min/median, and
+  remember X+ runs include VM startup.
+
+### Distribution & workflow
+- **Ship `.xbc`, not source,** when you want tiny artifacts: `xpc build app.xp`
+  then run anywhere with `xpc app.xbc`.
+- **Commit `xpc.lock`** so teammates and CI get identical, SHA-256-verified
+  libraries; run `xpc audit` periodically.
+- **Prefer local `./libs/` for experiments** — the resolver always picks the
+  local copy first. Use `--no-cache` to force a fresh download.
+- **Inspect the pipeline** when debugging: `xpc ast`, `xpc ir`, `xpc disasm`.
+- **Use `xpc simulate --board=esp32`** to prototype MMIO/GPIO/interrupt code
+  without any hardware.
+
+### Contributing
+- **Run `python3 tests/run_tests.py`** (20/20 expected) before every commit to
+  the toolchain.
+- **Publishing a library?** Include a runnable `example.xp`, a complete
+  `[packages.<name>]` entry, and don't touch other contributors' files
+  (see [Section 22](#22-tutorial-publishing-to-x-plesliblary-fork--pr)).
+- **Report bugs with a minimal `.xp` snippet** + `xpc doctor` output.
+
+---
 
 Happy hacking — start with `xpc repl`, then explore `examples/` from `hello.xp`
 all the way to `interrupt_demo.xp`: from `show(sys::out, ...)` to MMIO and
